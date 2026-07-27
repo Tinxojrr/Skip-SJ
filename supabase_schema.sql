@@ -1,110 +1,147 @@
 -- ==========================================
 -- SCRIPT DE CREACIÓN DE BASE DE DATOS (Supabase)
--- Proyecto: Skip SJ
+-- Proyecto: Skip SJ (Esquema Completo v2)
 -- ==========================================
 
--- 1. Tipos Personalizados (Enums)
+-- 1. ENUMS (Tipos Personalizados)
 CREATE TYPE user_role AS ENUM ('student', 'store_admin', 'super_admin');
-CREATE TYPE order_status AS ENUM ('pending_payment', 'paid', 'preparing', 'ready', 'completed', 'cancelled');
+CREATE TYPE locatario_tipo AS ENUM ('casino', 'foodtruck', 'kiosco');
+CREATE TYPE pedido_estado AS ENUM ('pendiente_pago', 'pagado', 'en_preparacion', 'listo_retiro', 'completado', 'cancelado');
+CREATE TYPE metodo_pago_enum AS ENUM ('mercadopago', 'junaeb', 'otro');
+CREATE TYPE transaccion_estado AS ENUM ('aprobada', 'rechazada', 'pendiente');
 
--- 2. Tabla de Perfiles (Usuarios extendidos de auth.users)
-CREATE TABLE profiles (
+-- 2. USUARIOS (Conectado a auth.users de Supabase)
+CREATE TABLE usuarios (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    full_name TEXT,
-    role user_role DEFAULT 'student'::user_role,
+    rut VARCHAR(12),
+    p_nombre VARCHAR(50),
+    s_nombre VARCHAR(50),
+    apellido_p VARCHAR(50),
+    apellido_m VARCHAR(50),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    rol user_role DEFAULT 'student'::user_role,
+    push_token VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 3. Tabla de Locales (Stores)
-CREATE TABLE stores (
+-- 3. LOCATARIOS
+CREATE TABLE locatarios (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    is_open BOOLEAN DEFAULT true,
-    image_url TEXT,
+    nombre VARCHAR(100) NOT NULL,
+    tipo locatario_tipo NOT NULL,
+    usuario_admin_id UUID REFERENCES usuarios(id) ON DELETE SET NULL, -- FK a usuarios
+    activo BOOLEAN DEFAULT true, -- Corregido a boolean
+    capacidad_max_hora INT NOT NULL DEFAULT 50,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 4. Tabla de Productos (Menú por local)
-CREATE TABLE products (
+-- 4. FRANJAS HORARIAS
+CREATE TABLE franjas_horarias (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    description TEXT,
-    price INTEGER NOT NULL,
-    is_available BOOLEAN DEFAULT true,
-    image_url TEXT,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    hora_inicio TIME NOT NULL, -- Corregido a TIME
+    hora_fin TIME NOT NULL,    -- Corregido a TIME
+    capacidad_pedidos INT NOT NULL
+);
+
+-- 5. CATEGORÍAS MENÚ
+CREATE TABLE categorias_menu (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    nombre VARCHAR(50) NOT NULL,
+    orden INT DEFAULT 0
+);
+
+-- 6. PRODUCTOS
+CREATE TABLE productos (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    categoria_id UUID REFERENCES categorias_menu(id) ON DELETE SET NULL,
+    nombre_producto VARCHAR(150) NOT NULL,
+    descripcion VARCHAR(255),
+    precio INT NOT NULL, -- Corregido a INT (CLP)
+    imagen_url VARCHAR(500),
+    disponible BOOLEAN DEFAULT true, -- Corregido a boolean
+    stock_diario INT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 7. MENU DEL DÍA
+CREATE TABLE menu_del_dia (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    fecha DATE NOT NULL,
+    disponible BOOLEAN DEFAULT true, -- Corregido a boolean
+    stock_restante INT NOT NULL
+);
+
+-- 8. PROMOCIONES
+CREATE TABLE promociones (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
+    descuento_porcentaje INT NOT NULL, -- Ej: 15 para 15%
+    hora_inicio TIME,
+    hora_fin TIME,
+    activa BOOLEAN DEFAULT true -- Corregido a boolean
+);
+
+-- 9. PEDIDOS
+CREATE TABLE pedidos (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
+    locatario_id UUID REFERENCES locatarios(id) ON DELETE CASCADE,
+    franja_horaria_id UUID REFERENCES franjas_horarias(id) ON DELETE SET NULL,
+    estado pedido_estado DEFAULT 'pendiente_pago'::pedido_estado,
+    metodo_pago metodo_pago_enum,
+    monto_total INT NOT NULL, -- Corregido a INT
+    hora_retiro_estimada TIMESTAMP WITH TIME ZONE,
+    codigo_retiro VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 10. PEDIDO ITEMS (Detalle)
+CREATE TABLE pedido_items (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id) ON DELETE SET NULL,
+    cantidad INT NOT NULL DEFAULT 1,
+    precio_unitario INT NOT NULL, -- Corregido a INT
+    subtotal INT NOT NULL -- Corregido a INT
+);
+
+-- 11. TRANSACCIONES PAGO
+CREATE TABLE transacciones_pago (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+    proveedor VARCHAR(50) NOT NULL, -- Ej: 'MercadoPago', 'Edenred'
+    transaccion_externa_id VARCHAR(255),
+    estado transaccion_estado DEFAULT 'pendiente'::transaccion_estado,
+    monto INT NOT NULL, -- Corregido a INT
+    payload_respuesta JSONB, -- JSONB es ideal para guardar respuestas completas de la API de pago
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 5. Tabla de Órdenes (Cabecera del pedido)
-CREATE TABLE orders (
+-- 12. NOTIFICACIONES
+CREATE TABLE notificaciones (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
-    status order_status DEFAULT 'pending_payment'::order_status,
-    total_amount INTEGER NOT NULL,
-    scheduled_time TIMESTAMP WITH TIME ZONE NOT NULL, -- Hora agendada de retiro
-    payment_id TEXT, -- ID de MercadoPago o Junaeb
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
--- 6. Tabla de Detalles de Orden (Productos dentro de un pedido)
-CREATE TABLE order_items (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
-    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price INTEGER NOT NULL, -- Guardamos el precio al momento de la compra
+    pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+    usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL, -- Ej: 'pedido_listo', 'promo_activa'
+    enviado BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- ==========================================
--- POLÍTICAS DE SEGURIDAD (Row Level Security - RLS)
+-- INDEXES DE RENDIMIENTO (Performance)
+-- Basados en las sugerencias de su diagrama
 -- ==========================================
-
--- Habilitar RLS en todas las tablas
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
-
--- Políticas de Profiles
-CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can insert their own profile." ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
-
--- Políticas de Stores
-CREATE POLICY "Stores are viewable by everyone." ON stores FOR SELECT USING (true);
-
--- Políticas de Products
-CREATE POLICY "Products are viewable by everyone." ON products FOR SELECT USING (true);
-
--- Políticas de Orders
-CREATE POLICY "Users can view their own orders." ON orders FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own orders." ON orders FOR INSERT WITH CHECK (auth.uid() = user_id);
--- Faltan políticas complejas para que los store_admin puedan ver las órdenes de su local.
-
--- Políticas de Order Items
-CREATE POLICY "Users can view their own order items." ON order_items FOR SELECT USING (
-    EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.user_id = auth.uid())
-);
-CREATE POLICY "Users can insert items to their own orders." ON order_items FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.user_id = auth.uid())
-);
-
--- Trigger para crear profile automáticamente al registrar un usuario (Opcional, pero recomendado)
-CREATE OR REPLACE FUNCTION public.handle_new_user() 
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+CREATE INDEX idx_productos_locatario ON productos(locatario_id);
+CREATE INDEX idx_pedidos_usuario ON pedidos(usuario_id);
+CREATE INDEX idx_pedidos_locatario ON pedidos(locatario_id);
+CREATE INDEX idx_pedidos_franja ON pedidos(franja_horaria_id);
+CREATE INDEX idx_pedido_items_pedido ON pedido_items(pedido_id);
+CREATE INDEX idx_transacciones_pedido ON transacciones_pago(pedido_id);
