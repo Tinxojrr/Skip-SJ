@@ -137,15 +137,21 @@ export default function AuthScreen() {
               <View className="flex-row mb-8 bg-black/5 rounded-2xl p-1">
                 <TouchableOpacity 
                   onPress={() => !isLogin && toggleAuthMode()}
-                  className={`flex-1 py-3 items-center rounded-xl ${isLogin ? 'bg-white/70 shadow-sm' : ''}`}
+                  style={[
+                    { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+                    isLogin ? { backgroundColor: 'rgba(255,255,255,0.7)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 } : {}
+                  ]}
                 >
-                  <Text className={`font-[Inter-SemiBold] ${isLogin ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/50'}`}>Ingresar</Text>
+                  <Text style={{ fontFamily: 'Inter-SemiBold', color: isLogin ? '#1A1A1A' : 'rgba(26,26,26,0.5)' }}>Ingresar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => isLogin && toggleAuthMode()}
-                  className={`flex-1 py-3 items-center rounded-xl ${!isLogin ? 'bg-white/70 shadow-sm' : ''}`}
+                  style={[
+                    { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+                    !isLogin ? { backgroundColor: 'rgba(255,255,255,0.7)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 } : {}
+                  ]}
                 >
-                  <Text className={`font-[Inter-SemiBold] ${!isLogin ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/50'}`}>Registro</Text>
+                  <Text style={{ fontFamily: 'Inter-SemiBold', color: !isLogin ? '#1A1A1A' : 'rgba(26,26,26,0.5)' }}>Registro</Text>
                 </TouchableOpacity>
               </View>
 
