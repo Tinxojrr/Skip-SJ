@@ -35,7 +35,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
       style={[
         animatedStyle,
         { 
-          shadowColor: '#9333ea', 
+          shadowColor: '#2ECC71', 
           shadowOffset: { width: 0, height: 8 }, 
           shadowOpacity: 0.4, 
           shadowRadius: 12 
@@ -52,7 +52,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         className="rounded-2xl overflow-hidden"
       >
         <LinearGradient
-          colors={['#9333ea', '#4f46e5']}
+          colors={['#2ECC71', '#0ea5e9']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="py-4 items-center justify-center"

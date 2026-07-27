@@ -119,11 +119,11 @@ export default function AuthScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#0f0f1e]">
+    <View className="flex-1 bg-[#FAFAFA]">
       {/* Background Glass Blobs */}
-      <View className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-purple-600/30 blur-3xl" />
-      <View className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-cyan-600/20 blur-3xl" />
-      <View className="absolute -bottom-32 left-10 w-96 h-96 rounded-full bg-indigo-600/20 blur-3xl" />
+      <View className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-emerald-400/30 blur-3xl" />
+      <View className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-purple-300/30 blur-3xl" />
+      <View className="absolute -bottom-32 left-10 w-96 h-96 rounded-full bg-sky-300/30 blur-3xl" />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -132,27 +132,27 @@ export default function AuthScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
           
           <View className="items-center mb-10">
-            <Text className="text-white text-5xl font-[Inter-Bold] tracking-tight mb-2">Skip SJ</Text>
-            <Text className="text-white/60 text-base font-[Inter-Regular]">Sin filas. Sin espera.</Text>
+            <Text className="text-[#1A1A1A] text-5xl font-[Inter-Bold] tracking-tight mb-2">Skip SJ</Text>
+            <Text className="text-[#1A1A1A]/60 text-base font-[Inter-Regular]">Sin filas. Sin espera.</Text>
           </View>
 
           {/* Glass Card */}
-          <View className="rounded-[32px] overflow-hidden border border-white/10" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.5, shadowRadius: 30 }}>
-            <BlurView intensity={40} tint="dark" className="p-6 bg-black/20">
+          <View className="rounded-[24px] overflow-hidden border border-white/60" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 15 }, shadowOpacity: 0.1, shadowRadius: 30 }}>
+            <BlurView intensity={40} tint="light" className="p-6 bg-white/55">
               
               {/* Toggles */}
-              <View className="flex-row mb-8 bg-white/5 rounded-2xl p-1">
+              <View className="flex-row mb-8 bg-black/5 rounded-2xl p-1">
                 <TouchableOpacity 
                   onPress={() => !isLogin && toggleAuthMode()}
-                  className={`flex-1 py-3 items-center rounded-xl ${isLogin ? 'bg-white/10' : ''}`}
+                  className={`flex-1 py-3 items-center rounded-xl ${isLogin ? 'bg-white/70 shadow-sm' : ''}`}
                 >
-                  <Text className={`font-[Inter-SemiBold] ${isLogin ? 'text-white' : 'text-white/50'}`}>Ingresar</Text>
+                  <Text className={`font-[Inter-SemiBold] ${isLogin ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/50'}`}>Ingresar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => isLogin && toggleAuthMode()}
-                  className={`flex-1 py-3 items-center rounded-xl ${!isLogin ? 'bg-white/10' : ''}`}
+                  className={`flex-1 py-3 items-center rounded-xl ${!isLogin ? 'bg-white/70 shadow-sm' : ''}`}
                 >
-                  <Text className={`font-[Inter-SemiBold] ${!isLogin ? 'text-white' : 'text-white/50'}`}>Registro</Text>
+                  <Text className={`font-[Inter-SemiBold] ${!isLogin ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/50'}`}>Registro</Text>
                 </TouchableOpacity>
               </View>
 
@@ -163,7 +163,7 @@ export default function AuthScreen() {
                     placeholder="Nombre completo"
                     value={fullName}
                     onChangeText={setFullName}
-                    icon={<User color="#fff" size={20} />}
+                    icon={<User color="#6b7280" size={20} />}
                   />
                 )}
                 
@@ -173,7 +173,7 @@ export default function AuthScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   error={emailError}
-                  icon={<Mail color="#fff" size={20} />}
+                  icon={<Mail color="#6b7280" size={20} />}
                 />
 
                 <GlassInput 
@@ -182,7 +182,7 @@ export default function AuthScreen() {
                   onChangeText={setPassword}
                   isPassword
                   error={passwordError}
-                  icon={<Lock color="#fff" size={20} />}
+                  icon={<Lock color="#6b7280" size={20} />}
                 />
 
                 {!isLogin && (
@@ -191,13 +191,13 @@ export default function AuthScreen() {
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     isPassword
-                    icon={<Lock color="#fff" size={20} />}
+                    icon={<Lock color="#6b7280" size={20} />}
                   />
                 )}
 
                 {isLogin && (
                   <TouchableOpacity className="self-end mb-4">
-                    <Text className="text-cyan-400 text-sm font-[Inter-Regular]">¿Olvidaste tu contraseña?</Text>
+                    <Text className="text-[#2ECC71] text-sm font-[Inter-SemiBold]">¿Olvidaste tu contraseña?</Text>
                   </TouchableOpacity>
                 )}
               </Animated.View>
