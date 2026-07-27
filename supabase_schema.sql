@@ -145,3 +145,39 @@ CREATE INDEX idx_pedidos_locatario ON pedidos(locatario_id);
 CREATE INDEX idx_pedidos_franja ON pedidos(franja_horaria_id);
 CREATE INDEX idx_pedido_items_pedido ON pedido_items(pedido_id);
 CREATE INDEX idx_transacciones_pedido ON transacciones_pago(pedido_id);
+
+-- ==========================================
+-- POLÍTICAS DE SEGURIDAD (Row Level Security - RLS)
+-- ==========================================
+-- Como activaste "Automatic RLS", TODAS las tablas están bloqueadas. 
+-- Estas políticas permiten que la app móvil funcione.
+
+-- 1. Tablas Públicas (Todos pueden ver el menú y los locales)
+CREATE POLICY "Locatarios visibles para todos" ON locatarios FOR SELECT USING (true);
+CREATE POLICY "Franjas visibles para todos" ON franjas_horarias FOR SELECT USING (true);
+CREATE POLICY "Categorias visibles para todos" ON categorias_menu FOR SELECT USING (true);
+CREATE POLICY "Productos visibles para todos" ON productos FOR SELECT USING (true);
+CREATE POLICY "Menu dia visible para todos" ON menu_del_dia FOR SELECT USING (true);
+CREATE POLICY "Promociones visibles para todos" ON promociones FOR SELECT USING (true);
+
+-- 2. Usuarios (Solo ven y editan su propio perfil)
+CREATE POLICY "Usuarios ven su propio perfil" ON usuarios FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Usuarios actualizan su propio perfil" ON usuarios FOR UPDATE USING (auth.uid() = id);
+
+-- 3. Pedidos y Transacciones (Alumnos solo ven lo suyo)
+CREATE POLICY "Alumnos ven sus propios pedidos" ON pedidos FOR SELECT USING (auth.uid() = usuario_id);
+CREATE POLICY "Alumnos crean sus pedidos" ON pedidos FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+
+CREATE POLICY "Alumnos ven detalles de su pedido" ON pedido_items FOR SELECT USING (
+    EXISTS (SELECT 1 FROM pedidos WHERE pedidos.id = pedido_items.pedido_id AND pedidos.usuario_id = auth.uid())
+);
+CREATE POLICY "Alumnos agregan detalles a su pedido" ON pedido_items FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM pedidos WHERE pedidos.id = pedido_items.pedido_id AND pedidos.usuario_id = auth.uid())
+);
+
+CREATE POLICY "Alumnos ven sus transacciones" ON transacciones_pago FOR SELECT USING (
+    EXISTS (SELECT 1 FROM pedidos WHERE pedidos.id = transacciones_pago.pedido_id AND pedidos.usuario_id = auth.uid())
+);
+CREATE POLICY "Alumnos crean transacciones" ON transacciones_pago FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM pedidos WHERE pedidos.id = transacciones_pago.pedido_id AND pedidos.usuario_id = auth.uid())
+);
