@@ -149,7 +149,7 @@ CREATE INDEX idx_transacciones_pedido ON transacciones_pago(pedido_id);
 -- ==========================================
 -- POLÍTICAS DE SEGURIDAD (Row Level Security - RLS)
 -- ==========================================
--- Como activaste "Automatic RLS", TODAS las tablas están bloqueadas. 
+-- Como activamos "Automatic RLS", TODAS las tablas están bloqueadas. 
 -- Estas políticas permiten que la app móvil funcione.
 
 -- 1. Tablas Públicas (Todos pueden ver el menú y los locales)
