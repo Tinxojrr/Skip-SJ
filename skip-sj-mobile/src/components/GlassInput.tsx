@@ -22,7 +22,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
   
   const isFocused = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({
-    borderColor: isFocused.value ? 'rgba(46, 204, 113, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+    borderBottomColor: isFocused.value ? 'rgba(255, 107, 107, 1)' : 'rgba(255, 107, 107, 0.3)',
     transform: [{ scale: 1 + isFocused.value * 0.01 }]
   }));
 
@@ -34,18 +34,15 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           {
             borderRadius: 16,
             overflow: 'hidden',
-            borderWidth: 1,
-            shadowColor: '#000', 
-            shadowOffset: { width: 0, height: 4 }, 
-            shadowOpacity: 0.05, 
-            shadowRadius: 10 
+            borderBottomWidth: 2,
+            backgroundColor: 'rgba(0,0,0,0.04)'
           }
         ]}
       >
-        <BlurView intensity={20} tint="light" className="flex-row items-center px-4 py-3 bg-black/[0.03]">
-          {icon && <View className="mr-3">{icon}</View>}
+        <BlurView intensity={20} tint="light" style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+          {icon && <View style={{ marginRight: 12, opacity: 0.8 }}>{icon}</View>}
           <TextInput
-            className="flex-1 text-[#1A1A1A] font-[Inter-Regular] text-base"
+            style={{ flex: 1, color: '#1A1A1A', fontFamily: 'Inter-Regular', fontSize: 16 }}
             placeholderTextColor="rgba(0, 0, 0, 0.4)"
             secureTextEntry={isSecure}
             autoCapitalize="none"
@@ -62,19 +59,19 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           {isPassword && (
             <TouchableOpacity 
               onPress={() => setIsSecure(!isSecure)}
-              className="p-2 -mr-2 opacity-70"
+              style={{ padding: 8, marginRight: -8, opacity: 0.7 }}
             >
               {isSecure ? (
-                <EyeOff color="#6b7280" size={20} />
+                <EyeOff color="rgba(255, 107, 107, 0.7)" size={20} />
               ) : (
-                <Eye color="#6b7280" size={20} />
+                <Eye color="rgba(255, 107, 107, 0.7)" size={20} />
               )}
             </TouchableOpacity>
           )}
         </BlurView>
       </Animated.View>
       {error ? (
-        <Text className="text-red-500 text-sm mt-1 ml-2 font-[Inter-Regular]">{error}</Text>
+        <Text style={{ color: '#ef4444', fontSize: 14, marginTop: 4, marginLeft: 8, fontFamily: 'Inter-Regular' }}>{error}</Text>
       ) : null}
     </View>
   );

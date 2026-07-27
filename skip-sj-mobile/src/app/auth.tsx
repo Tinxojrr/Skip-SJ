@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert, LayoutAnimation, UIManager } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Mail, Lock, User } from 'lucide-react-native';
+import { Mail, Lock, User, Coffee } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeInUp, LinearTransition, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 
 import { GlassInput } from '../components/GlassInput';
 import { GradientButton } from '../components/GradientButton';
@@ -29,6 +29,48 @@ export default function AuthScreen() {
   
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Animaciones de Blobs y Logo
+  const blob1Y = useSharedValue(0);
+  const blob1X = useSharedValue(0);
+  const blob1Scale = useSharedValue(1);
+
+  const blob2Y = useSharedValue(0);
+  const blob2X = useSharedValue(0);
+  const blob2Scale = useSharedValue(1);
+
+  const blob3Y = useSharedValue(0);
+  const blob3X = useSharedValue(0);
+  const blob3Scale = useSharedValue(1);
+
+  const logoY = useSharedValue(0);
+
+  useEffect(() => {
+    const easeInOut = Easing.inOut(Easing.sin);
+    
+    // Blob 1: 4000ms
+    blob1Y.value = withRepeat(withSequence(withTiming(-15, { duration: 2000, easing: easeInOut }), withTiming(15, { duration: 2000, easing: easeInOut })), -1, true);
+    blob1X.value = withRepeat(withSequence(withTiming(10, { duration: 2200, easing: easeInOut }), withTiming(-10, { duration: 2200, easing: easeInOut })), -1, true);
+    blob1Scale.value = withRepeat(withSequence(withTiming(1.05, { duration: 2500, easing: easeInOut }), withTiming(1, { duration: 2500, easing: easeInOut })), -1, true);
+
+    // Blob 2: 5500ms
+    blob2Y.value = withRepeat(withSequence(withTiming(20, { duration: 2750, easing: easeInOut }), withTiming(-20, { duration: 2750, easing: easeInOut })), -1, true);
+    blob2X.value = withRepeat(withSequence(withTiming(-15, { duration: 3000, easing: easeInOut }), withTiming(15, { duration: 3000, easing: easeInOut })), -1, true);
+    blob2Scale.value = withRepeat(withSequence(withTiming(1.08, { duration: 3200, easing: easeInOut }), withTiming(0.95, { duration: 3200, easing: easeInOut })), -1, true);
+
+    // Blob 3: 6800ms
+    blob3Y.value = withRepeat(withSequence(withTiming(-18, { duration: 3400, easing: easeInOut }), withTiming(18, { duration: 3400, easing: easeInOut })), -1, true);
+    blob3X.value = withRepeat(withSequence(withTiming(12, { duration: 3600, easing: easeInOut }), withTiming(-12, { duration: 3600, easing: easeInOut })), -1, true);
+    blob3Scale.value = withRepeat(withSequence(withTiming(1.06, { duration: 3800, easing: easeInOut }), withTiming(0.98, { duration: 3800, easing: easeInOut })), -1, true);
+
+    // Logo float: 2500ms
+    logoY.value = withRepeat(withSequence(withTiming(-4, { duration: 1250, easing: easeInOut }), withTiming(4, { duration: 1250, easing: easeInOut })), -1, true);
+  }, []);
+
+  const b1Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob1Y.value }, { translateX: blob1X.value }, { scale: blob1Scale.value }] }));
+  const b2Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob2Y.value }, { translateX: blob2X.value }, { scale: blob2Scale.value }] }));
+  const b3Style = useAnimatedStyle(() => ({ transform: [{ translateY: blob3Y.value }, { translateX: blob3X.value }, { scale: blob3Scale.value }] }));
+  const logoStyle = useAnimatedStyle(() => ({ transform: [{ translateY: logoY.value }] }));
 
   const toggleAuthMode = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -99,11 +141,13 @@ export default function AuthScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
-      {/* Background Blobs */}
-      <View style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden', zIndex: -10 }}>
-        <View style={{ position: 'absolute', top: -150, left: -150, width: 500, height: 500, borderRadius: 250, backgroundColor: '#2ECC71', opacity: 0.2 }} />
-        <View style={{ position: 'absolute', top: '20%', right: -200, width: 400, height: 400, borderRadius: 200, backgroundColor: '#c084fc', opacity: 0.2 }} />
-        <View style={{ position: 'absolute', bottom: -200, left: -100, width: 600, height: 600, borderRadius: 300, backgroundColor: '#7dd3fc', opacity: 0.2 }} />
+      {/* Background Blobs - Nueva Paleta Coral-Violeta Balanceada */}
+      <View style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden' }}>
+        <Animated.View style={[b1Style, { position: 'absolute', top: -150, left: -150, width: 500, height: 500, borderRadius: 250, backgroundColor: '#FFD3C4', opacity: 0.3 }]} />
+        <Animated.View style={[b2Style, { position: 'absolute', top: '15%', right: -150, width: 450, height: 450, borderRadius: 225, backgroundColor: '#E9D5FF', opacity: 0.4 }]} />
+        <Animated.View style={[b3Style, { position: 'absolute', bottom: -200, left: -100, width: 600, height: 600, borderRadius: 300, backgroundColor: '#FCE7F3', opacity: 0.3 }]} />
+        {/* Cuarto blob violeta reducido y menos opaco para no saturar */}
+        <Animated.View style={[b1Style, { position: 'absolute', bottom: -100, right: -100, width: 250, height: 250, borderRadius: 125, backgroundColor: '#A855F7', opacity: 0.2 }]} />
       </View>
 
       <SafeAreaView style={{ flex: 1 }}>
@@ -114,7 +158,16 @@ export default function AuthScreen() {
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 }}>
             
             <View style={{ alignItems: 'center', marginBottom: 40 }}>
-              <Text style={{ color: '#1A1A1A', fontSize: 48, fontFamily: 'Inter-Bold', marginBottom: 8 }}>Skip SJ</Text>
+              <Animated.View style={[logoStyle, { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,107,107,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }]}>
+                <Coffee color="#FF6B6B" size={32} />
+              </Animated.View>
+              
+              {/* Badge Duoc UC - Menos dominante */}
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: 'rgba(26,26,26,0.6)' }}>Duoc UC San Joaquín</Text>
+              </View>
+
+              <Text style={{ color: '#1A1A1A', fontSize: 48, fontFamily: 'Inter-Bold', lineHeight: 48, marginBottom: 8 }}>Skip SJ</Text>
               <Text style={{ color: 'rgba(26,26,26,0.6)', fontSize: 16, fontFamily: 'Inter-Regular' }}>Sin filas. Sin espera.</Text>
             </View>
 
@@ -125,37 +178,21 @@ export default function AuthScreen() {
                 borderRadius: 24, 
                 overflow: 'hidden', 
                 borderWidth: 1, 
-                borderColor: 'rgba(255, 255, 255, 0.6)', 
+                borderColor: 'rgba(255, 255, 255, 0.7)', 
                 shadowColor: '#000', 
                 shadowOffset: { width: 0, height: 8 }, 
                 shadowOpacity: 0.08, 
                 shadowRadius: 24,
-                elevation: 10
               }}
             >
-              <BlurView intensity={40} tint="light" style={{ padding: 24 }}>
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.4)' }} />
+              <BlurView intensity={40} tint="light" style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 36 }}>
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.25)' }} />
                 
-                {/* Toggles */}
-                <View style={{ flexDirection: 'row', marginBottom: 32, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 16, padding: 4 }}>
-                  <TouchableOpacity 
-                    onPress={() => !isLogin && toggleAuthMode()}
-                    style={[
-                      { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
-                      isLogin ? { backgroundColor: 'rgba(255,255,255,0.7)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 } : {}
-                    ]}
-                  >
-                    <Text style={{ fontFamily: 'Inter-SemiBold', color: isLogin ? '#1A1A1A' : 'rgba(26,26,26,0.5)' }}>Ingresar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => isLogin && toggleAuthMode()}
-                    style={[
-                      { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
-                      !isLogin ? { backgroundColor: 'rgba(255,255,255,0.7)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 } : {}
-                    ]}
-                  >
-                    <Text style={{ fontFamily: 'Inter-SemiBold', color: !isLogin ? '#1A1A1A' : 'rgba(26,26,26,0.5)' }}>Registro</Text>
-                  </TouchableOpacity>
+                {/* Título de estado */}
+                <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                  <Text style={{ fontSize: 18, fontFamily: 'Inter-SemiBold', color: '#1A1A1A' }}>
+                    {isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
+                  </Text>
                 </View>
 
                 {/* Form Container */}
@@ -165,7 +202,7 @@ export default function AuthScreen() {
                       placeholder="Nombre completo"
                       value={fullName}
                       onChangeText={setFullName}
-                      icon={<User color="#6b7280" size={20} />}
+                      icon={<User color="rgba(255, 107, 107, 0.6)" size={20} />}
                     />
                   )}
                   
@@ -175,7 +212,7 @@ export default function AuthScreen() {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     error={emailError}
-                    icon={<Mail color="#6b7280" size={20} />}
+                    icon={<Mail color="rgba(255, 107, 107, 0.6)" size={20} />}
                   />
 
                   <GlassInput 
@@ -184,7 +221,7 @@ export default function AuthScreen() {
                     onChangeText={setPassword}
                     isPassword
                     error={passwordError}
-                    icon={<Lock color="#6b7280" size={20} />}
+                    icon={<Lock color="rgba(255, 107, 107, 0.6)" size={20} />}
                   />
 
                   {!isLogin && (
@@ -193,22 +230,34 @@ export default function AuthScreen() {
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
                       isPassword
-                      icon={<Lock color="#6b7280" size={20} />}
+                      icon={<Lock color="rgba(255, 107, 107, 0.6)" size={20} />}
                     />
                   )}
 
                   {isLogin && (
                     <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 16 }}>
-                      <Text style={{ color: '#2ECC71', fontSize: 14, fontFamily: 'Inter-SemiBold' }}>¿Olvidaste tu contraseña?</Text>
+                      <Text style={{ color: '#D64545', fontSize: 14, fontFamily: 'Inter-SemiBold' }}>¿Olvidaste tu contraseña?</Text>
                     </TouchableOpacity>
                   )}
                 </Animated.View>
 
-                <GradientButton 
-                  title={isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'} 
-                  onPress={handleAuth}
-                  loading={loading}
-                />
+                <View style={{ marginBottom: 24 }}>
+                  <GradientButton 
+                    title={isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'} 
+                    onPress={handleAuth}
+                    loading={loading}
+                  />
+                </View>
+                
+                {/* Switch Form Link */}
+                <TouchableOpacity onPress={toggleAuthMode} style={{ alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(26,26,26,0.6)', fontSize: 14, fontFamily: 'Inter-Regular' }}>
+                    {isLogin ? "¿No tienes cuenta? " : "¿Ya tienes cuenta? "}
+                    <Text style={{ color: '#FF6B6B', fontFamily: 'Inter-Bold' }}>
+                      {isLogin ? "Regístrate" : "Inicia sesión"}
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
 
               </BlurView>
             </Animated.View>
