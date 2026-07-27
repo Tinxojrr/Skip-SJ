@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert, LayoutAnimation, UIManager } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Mail, Lock, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
 
 import { GlassInput } from '../components/GlassInput';
 import { GradientButton } from '../components/GradientButton';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -28,22 +30,13 @@ export default function AuthScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Animación suave de altura para el cambio de tab
-  const formHeight = useSharedValue(isLogin ? 250 : 400);
-
   const toggleAuthMode = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsLogin(!isLogin);
-    formHeight.value = withTiming(!isLogin ? 250 : 400, { duration: 300 });
     // Reset errors
     setEmailError('');
     setPasswordError('');
   };
-
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    return {
-      minHeight: formHeight.value,
-    };
-  });
 
   const validateForm = () => {
     let isValid = true;
@@ -88,7 +81,7 @@ export default function AuthScreen() {
 
         if (error) throw error;
         setSession(data.session);
-        router.replace('/'); // Redirige al index tras loguear
+        router.replace('/');
         
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -157,7 +150,7 @@ export default function AuthScreen() {
               </View>
 
               {/* Form Container */}
-              <Animated.View style={animatedContainerStyle}>
+              <View>
                 {!isLogin && (
                   <GlassInput 
                     placeholder="Nombre completo"
@@ -200,7 +193,7 @@ export default function AuthScreen() {
                     <Text className="text-[#2ECC71] text-sm font-[Inter-SemiBold]">¿Olvidaste tu contraseña?</Text>
                   </TouchableOpacity>
                 )}
-              </Animated.View>
+              </View>
 
               <GradientButton 
                 title={isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'} 
