@@ -40,9 +40,9 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         { 
           width: '100%', 
           marginTop: 16, 
-          shadowColor: '#FF6B6B', 
+          shadowColor: '#FFBF00', 
           shadowOffset: { width: 0, height: 8 }, 
-          shadowOpacity: 0.3, 
+          shadowOpacity: 0.25, 
           shadowRadius: 16 
         }
       ]}
@@ -55,16 +55,16 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}
       >
         <LinearGradient
-          colors={['#FF6B6B', '#8B5CF6']}
+          colors={['#FFBF00', '#FFBF00']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ width: '100%', paddingVertical: 16, paddingHorizontal: 24, justifyContent: 'center', alignItems: 'center' }}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#111111" />
           ) : (
             <Text 
-              style={{ color: '#fff', fontFamily: 'Inter-Bold', fontSize: 18, textAlign: 'center', flexShrink: 1, zIndex: 10 }} 
+              style={{ color: '#111111', fontFamily: 'Inter-Bold', fontWeight: '800', fontSize: 18, textAlign: 'center', flexShrink: 1, zIndex: 10, letterSpacing: 0.5 }} 
               numberOfLines={1}
             >
               {title}

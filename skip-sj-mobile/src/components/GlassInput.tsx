@@ -22,7 +22,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
   
   const isFocused = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({
-    borderBottomColor: isFocused.value ? 'rgba(255, 107, 107, 1)' : 'rgba(255, 107, 107, 0.3)',
+    borderBottomColor: isFocused.value ? '#0056A3' : 'rgba(200, 140, 20, 0.3)',
     transform: [{ scale: 1 + isFocused.value * 0.01 }]
   }));
 
@@ -43,7 +43,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           {icon && <View style={{ marginRight: 12, opacity: 0.8 }}>{icon}</View>}
           <TextInput
             style={{ flex: 1, color: '#1A1A1A', fontFamily: 'Inter-Regular', fontSize: 16 }}
-            placeholderTextColor="rgba(0, 0, 0, 0.4)"
+            placeholderTextColor="#6B7280"
             secureTextEntry={isSecure}
             autoCapitalize="none"
             onFocus={(e) => {
@@ -62,9 +62,9 @@ export const GlassInput: React.FC<GlassInputProps> = ({
               style={{ padding: 8, marginRight: -8, opacity: 0.7 }}
             >
               {isSecure ? (
-                <EyeOff color="rgba(255, 107, 107, 0.7)" size={20} />
+                <EyeOff color="rgba(0, 50, 90, 0.5)" size={20} />
               ) : (
-                <Eye color="rgba(255, 107, 107, 0.7)" size={20} />
+                <Eye color="rgba(0, 50, 90, 0.5)" size={20} />
               )}
             </TouchableOpacity>
           )}
