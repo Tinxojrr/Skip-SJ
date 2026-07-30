@@ -1,11 +1,27 @@
 import Dashboard from "./components/Dashboard/Dashboard";
 import Header from "./components/Layout/Header";
 import Sidebar from "./components/Layout/Sidebar";
-import { useState } from "react";
-function App() {
+import { useState, useEffect } from "react";
 
-  const [sideBarCollapsed, setSideBarCollapsed] = useState(false)
-  const [currentPage, setCurrentPage] = useState("dashboard")
+function App() {
+  const [sideBarCollapsed, setSideBarCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState("dashboard");
+  
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    return saved ? saved === "dark" : true;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
   return (
     <div
@@ -15,25 +31,27 @@ function App() {
     >
       <div className="flex h-screen overflow-hidden">
         <Sidebar
-        collapsed={sideBarCollapsed}
-        onToggle={() => setSideBarCollapsed(!sideBarCollapsed)}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
+          collapsed={sideBarCollapsed}
+          onToggle={() => setSideBarCollapsed(!sideBarCollapsed)}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
         />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header 
-          sidebarCollapsed={sideBarCollapsed}
-          onToggleSidebar={() => setSideBarCollapsed(!sideBarCollapsed)}
+          <Header
+            sidebarCollapsed={sideBarCollapsed}
+            onToggleSidebar={() => setSideBarCollapsed(!sideBarCollapsed)}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(!darkMode)}
           />
           <main className="flex-1 overflow-auto bg-transparent">
             <div className="p-6 space-y-6">
-                {currentPage === "dashboard" && <Dashboard />}
+              {currentPage === "dashboard" && <Dashboard />}
             </div>
           </main>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
