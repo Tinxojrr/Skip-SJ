@@ -1,11 +1,13 @@
-import { Bell, ChevronDown, Filter, Menu, Plus, Search, Settings, Sun } from "lucide-react";
+import { Bell, ChevronDown, Filter, Menu, Plus, Search, Settings, Sun, Moon  } from "lucide-react";
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  darkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
-function Header({sidebarCollapsed, onToggleSidebar}: HeaderProps) {
+function Header({sidebarCollapsed, darkMode, onToggleDarkMode, onToggleSidebar}: HeaderProps) {
   return (
     <div
       className="bg-white/80 dark:bg-slate-900/80 backdrop:xl border-b border-slate-200/50 
@@ -57,8 +59,8 @@ function Header({sidebarCollapsed, onToggleSidebar}: HeaderProps) {
             </button>
 
             {/* Toggle */}
-            <button className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Sun className="w-5 h-5"/>
+            <button className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onClick={onToggleDarkMode}>
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
             {/* Notification */}
