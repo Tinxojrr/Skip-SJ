@@ -1,7 +1,7 @@
-import ActivityFeed from "./ActivityFeed"
-import ChartSection from "./ChartSection"
-import StatsGrid from "./StatsGrid"
-import TableSection from "./TableSection"
+import ActivityFeed from "./components/ActivityFeed"
+import ChartSection from "./components/ChartSection"
+import StatsGrid from "./components/StatsGrid"
+import TableSection from "./components/TableSection"
 
 
 function Dashboard() {
