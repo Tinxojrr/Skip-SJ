@@ -4,7 +4,7 @@ import StatsGrid from "./components/StatsGrid"
 import TableSection from "./components/TableSection"
 
 
-function Dashboard() {
+export const DashboardPage = () => {
   return (
     <div className="space-y-6">
         {/* Stats Grid */}
@@ -23,6 +23,4 @@ function Dashboard() {
         </div>
     </div>
   )
-}
-
-export default Dashboard
+};
