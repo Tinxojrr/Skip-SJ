@@ -23,6 +23,7 @@ const menuItems = [
     active: true,
     badge: "New",
   },
+
   {
     id: "analytics",
     icon: BarChart3,
@@ -49,6 +50,7 @@ const menuItems = [
     icon: ShoppingBag,
     label: "pedidos de comida",
     submenu: [
+      { id: "kanban", label: "Kanban Activo" },
       { id: "products", label: "Productos" },
       { id: "orders", label: "Ordenes" },
       { id: "customers", label: "Clientes" },
