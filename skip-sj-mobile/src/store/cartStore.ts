@@ -5,6 +5,7 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  storeId?: string;
   storeName?: string;
 }
 
@@ -19,8 +20,8 @@ interface CartState {
 
 // Datos de prueba iniciales para visualizar el carrito
 const mockInitialItems: CartItem[] = [
-  { id: '1', name: 'Promo Churrasco Italiano + Bebida', price: 6500, quantity: 1, storeName: 'Paradiso' },
-  { id: '2', name: 'Porción de Choclo', price: 2200, quantity: 2, storeName: 'Achoclonado' },
+  { id: '1', name: 'Promo Churrasco Italiano + Bebida', price: 6500, quantity: 1, storeId: '3', storeName: 'Paradiso' },
+  { id: '2', name: 'Porción de Choclo', price: 2200, quantity: 2, storeId: '2', storeName: 'Achoclonado' },
 ];
 
 export const useCartStore = create<CartState>((set, get) => ({

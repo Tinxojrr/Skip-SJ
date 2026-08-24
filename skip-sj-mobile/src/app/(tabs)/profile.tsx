@@ -15,13 +15,22 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfileScreen() {
-  const { session, setSession } = useAuthStore();
+  const { session, profile, setSession } = useAuthStore();
   const router = useRouter();
 
   // Extraer iniciales y nombre del usuario
   const email = session?.user?.email || '';
-  const fullName = session?.user?.user_metadata?.full_name || 'Alumno Duoc';
-  const initials = fullName
+  
+  let fullName = 'Alumno Duoc';
+  if (profile && profile.p_nombre) {
+    fullName = `${profile.p_nombre} ${profile.apellido_p || ''}`.trim();
+  } else if (session?.user?.user_metadata?.full_name) {
+    fullName = session.user.user_metadata.full_name;
+  }
+  
+  const displayName = profile?.apodo || fullName;
+  
+  const initials = displayName
     .split(' ')
     .map((n: string) => n[0])
     .join('')
@@ -73,11 +82,14 @@ export default function ProfileScreen() {
           }}>
             <Text style={{ color: '#F2A900', fontSize: 36, fontFamily: 'Inter-Bold' }}>{initials || 'DU'}</Text>
           </View>
-          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 4 }}>{fullName}</Text>
+          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 4 }}>{displayName}</Text>
+          {profile?.apodo && (
+            <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.4)', marginBottom: 2 }}>{fullName}</Text>
+          )}
           <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)' }}>{email}</Text>
           
           <TouchableOpacity 
-            onPress={() => handlePressSimulate('Editar Perfil')}
+            onPress={() => router.push('/edit-profile')}
             style={{ marginTop: 16, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(17,17,17,0.05)', borderRadius: 20 }}
           >
             <Text style={{ color: '#111111', fontFamily: 'Inter-SemiBold', fontSize: 13 }}>Editar perfil</Text>

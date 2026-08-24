@@ -124,11 +124,31 @@ export default function AuthScreen() {
         });
         if (error) throw error;
 
+        // Asegurar que el usuario exista en la tabla pública 'usuarios'
+        if (data.user) {
+          const { data: existingUser } = await supabase.from('usuarios').select('id').eq('id', data.user.id).single();
+          if (!existingUser) {
+            const names = fullName.trim().split(' ');
+            const newUser = {
+              id: data.user.id,
+              email: data.user.email!,
+              p_nombre: names[0] || '',
+              apellido_p: names.length > 1 ? names[names.length - 1] : '',
+              rol: 'alumno', // Asumiendo rol por defecto para la app móvil
+              rut: null,
+              s_nombre: null,
+              apellido_m: null,
+              push_token: null
+            };
+            await supabase.from('usuarios').insert(newUser as any);
+          }
+        }
+
         if (data.session) {
           setSession(data.session);
           router.replace('/');
         } else {
-          Alert.alert('Registro exitoso', 'Por favor verifica tu correo electrónico.');
+          Alert.alert('Registro exitoso', 'Por favor verifica tu correo electrónico para poder entrar.');
           setIsLogin(true);
         }
       }
@@ -268,11 +288,12 @@ export default function AuthScreen() {
                     loading={loading}
                   />
 
-                  <TouchableOpacity onPress={handleTestLogin} style={{ marginTop: 20, alignItems: 'center', padding: 8 }}>
+                  {/* Para producción esto se quitaría, pero lo dejamos por si necesitas bypass rápido */}
+                  {/* <TouchableOpacity onPress={handleTestLogin} style={{ marginTop: 20, alignItems: 'center', padding: 8 }}>
                     <Text style={{ color: '#0056A3', fontSize: 13, fontFamily: 'Inter-SemiBold', textDecorationLine: 'underline' }}>
                       O continuar con Usuario de Prueba
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
 
                 {/* Switch Form Link */}

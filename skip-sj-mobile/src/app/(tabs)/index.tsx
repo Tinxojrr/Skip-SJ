@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Plus } from 'lucide-react-native';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
 
 // Data simulada de Tiendas/Locales
 const STORES = [
@@ -27,9 +27,20 @@ const PRODUCTS = [
 ];
 
 export default function HomeScreen() {
+  console.log("HomeScreen rendering...");
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { addItem } = useCartStore();
+  const { session, profile } = useAuthStore();
+  
+  let shortName = 'Alumno';
+  if (profile && profile.apodo) {
+    shortName = profile.apodo;
+  } else if (profile && profile.p_nombre) {
+    shortName = profile.p_nombre;
+  } else if (session?.user?.user_metadata?.full_name && typeof session.user.user_metadata.full_name === 'string') {
+    shortName = session.user.user_metadata.full_name.split(' ')[0];
+  }
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -37,6 +48,7 @@ export default function HomeScreen() {
       name: product.name,
       price: product.price,
       quantity: 1,
+      storeId: product.storeId,
       storeName: product.storeName
     });
   };
@@ -56,18 +68,18 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <View style={{ flex: 1, backgroundColor: '#FAFAFA', paddingTop: 40 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         
         {/* Header Section */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={{ color: '#111111', fontSize: 32, fontFamily: 'Inter-Bold', marginBottom: 4 }}>Hola, Alumno 👋</Text>
-            <Text style={{ color: 'rgba(17,17,17,0.6)', fontSize: 16, fontFamily: 'Inter-Regular' }}>{getGreetingSubtitle()}</Text>
+        <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, paddingRight: 16 }}>
+            <Text style={{ color: '#111111', fontSize: 30, fontFamily: 'Inter-Bold', marginBottom: 6 }} numberOfLines={2}>Hola, {shortName} 👋</Text>
+            <Text style={{ color: 'rgba(17,17,17,0.6)', fontSize: 15, fontFamily: 'Inter-Regular', lineHeight: 22, flexWrap: 'wrap', flexShrink: 1 }}>{getGreetingSubtitle()}</Text>
           </View>
           
           {/* Badge Duoc UC */}
-          <View style={{ backgroundColor: '#111111', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
+          <View style={{ backgroundColor: '#111111', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexShrink: 0, marginTop: 4 }}>
             <Text style={{ color: '#F2A900', fontSize: 10, fontFamily: 'Inter-Bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Duoc UC</Text>
           </View>
         </View>
@@ -300,6 +312,6 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

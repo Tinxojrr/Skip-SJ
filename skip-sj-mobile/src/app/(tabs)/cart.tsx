@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
+import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Minus, Plus, Trash2, ShoppingCart, Receipt, Store } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 
 export default function CartScreen() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
+  const { session } = useAuthStore();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -15,14 +18,51 @@ export default function CartScreen() {
   const serviceFee = items.length > 0 ? 300 : 0; // $300 fijo
   const total = subtotal + serviceFee;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!session?.user) {
+      Alert.alert('Sesión requerida', 'Debes iniciar sesión para realizar un pedido.');
+      router.push('/auth');
+      return;
+    }
+
+    if (items.length === 0) return;
+
     setIsCheckingOut(true);
-    // Simular un retraso corto y mostrar "Éxito"
-    setTimeout(() => {
-      setIsCheckingOut(false);
+    
+    try {
+      // 1. Crear el Pedido
+      // Generamos un código de retiro aleatorio (ej. "A4F2")
+      const codigoRetiro = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      const { data: pedido, error: pedidoError } = await supabase.from('pedidos').insert({
+        usuario_id: session.user.id,
+        // Usamos el storeId del primer producto. NOTA: ¡Debe ser un UUID válido en tu BD!
+        locatario_id: items[0].storeId || null, 
+        estado: 'pendiente_pago',
+        metodo_pago: 'Junaeb BAES', // Por defecto por ahora
+        monto_total: total,
+        codigo_retiro: codigoRetiro,
+      }).select().single();
+      
+      if (pedidoError) throw pedidoError;
+      
+      // 2. Crear los Ítems del Pedido
+      const pedidoItemsData = items.map(item => ({
+        pedido_id: pedido.id,
+        producto_id: item.id, // NOTA: ¡Debe ser un UUID válido en tu BD!
+        cantidad: item.quantity,
+        precio_unitario: item.price,
+        subtotal: item.price * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabase.from('pedido_items').insert(pedidoItemsData);
+      
+      if (itemsError) throw itemsError;
+
+      // 3. Éxito
       Alert.alert(
         "¡Pedido Confirmado! 🎉",
-        "Tu pago fue exitoso y el local ya está preparando tu comida. Te avisaremos cuando esté listo.",
+        `Tu pago fue exitoso. Tu código de retiro es: ${codigoRetiro}. Te avisaremos cuando esté listo.`,
         [
           { 
             text: "Genial", 
@@ -33,7 +73,21 @@ export default function CartScreen() {
           }
         ]
       );
-    }, 1500);
+    } catch (error: any) {
+      console.error('Error al procesar pago:', error);
+      
+      // Manejo de error específico para cuando los productos son mocks (no son UUIDs válidos)
+      if (error.code === '22P02' || error.message?.includes('uuid')) {
+        Alert.alert(
+          "Error de Base de Datos", 
+          "El pago falló porque los productos en el carrito son datos de prueba (mocks). Para que funcione, debes tener productos y locatarios reales en tu base de datos Supabase."
+        );
+      } else {
+        Alert.alert("Error al procesar", error.message || "Ocurrió un problema al enviar tu pedido.");
+      }
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   // ESTADO VACÍO

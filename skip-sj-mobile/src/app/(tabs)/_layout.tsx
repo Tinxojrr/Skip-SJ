@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Home, ShoppingCart, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
+  console.log("TabsLayout rendering...");
   return (
     <Tabs screenOptions={{ 
       headerShown: false,
