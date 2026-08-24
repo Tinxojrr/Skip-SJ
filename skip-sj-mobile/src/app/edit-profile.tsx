@@ -47,14 +47,14 @@ export default function EditProfileScreen() {
           .from('usuarios')
           .upsert({
             id: user.id,
-            email: user.email,
+            email: user.email || '',
             apodo: formData.apodo.trim() || null,
             avatar_url: formData.avatar_url || null,
             rol: profile?.rol || 'alumno',
             ...(profile ? {} : {
                p_nombre: user.user_metadata?.full_name?.split(' ')[0] || null,
             })
-          })
+          } as any)
           .select()
           .single();
 
