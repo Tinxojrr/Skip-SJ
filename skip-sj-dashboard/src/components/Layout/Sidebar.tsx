@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
 
 const menuItems = [
   {
@@ -89,16 +90,9 @@ const menuItems = [
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  currentPage: string;
-  onPageChange: (page: string) => void;
 }
 
-function Sidebar({
-  collapsed,
-  onToggle,
-  currentPage,
-  onPageChange,
-}: SidebarProps) {
+function Sidebar({ collapsed }: SidebarProps) {
   const [expandedItems, setExpendedItems] = useState(new Set(["analytics"]));
 
   const toggleExpanded = (itemid: string) => {
@@ -142,60 +136,76 @@ function Sidebar({
         </div>
       </div>
       {/* Navigation*/}
+      {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-auto">
         {menuItems.map((item) => {
           return (
             <div key={item.id}>
-              <button
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
-                  currentPage === item.id || item.active
-                    ? "bg-linear-to-r from-yellow-500 to-blue-600 text-white shadow-lg shadow-blue-500/25"
-                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                }`}
-                onClick={() => {
-                  if (item.submenu) {
-                    toggleExpanded(item.id);
-                  } else {
-                    onPageChange(item.id);
-                  }
-                }}
-              >
-                <div className="flex items-center space-x-3 dark:text-white flex-1 min-w-0">
-                  <item.icon className={"w-5 h-5"} />
-                  {/* Conditional Rendering  */}
-                  {!collapsed && (
-                    <>
+              {item.submenu ? (
+                <button
+                  className="w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                  onClick={() => toggleExpanded(item.id)}
+                >
+                  <div className="flex items-center space-x-3 dark:text-white flex-1 min-w-0">
+                    <item.icon className="w-5 h-5" />
+                    {!collapsed && (
                       <span className="font-medium ml-2">{item.label}</span>
-                      {item.badge && (
-                        <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                      {item.count && (
-                        <span className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
-                          {item.count}
-                        </span>
-                      )}
-                    </>
+                    )}
+                  </div>
+                  {!collapsed && (
+                    <ChevronDown className="w-4 h-4 transition-transform dark:text-white" />
                   )}
-                </div>
-                {!collapsed && item.submenu && (
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform dark:text-white`}
-                  />
-                )}
-              </button>
+                </button>
+              ) : (
+                <NavLink
+                  to={`/${item.id}`}
+                  className={({ isActive }) =>
+                    `w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? "bg-linear-to-r from-yellow-500 to-blue-600 text-white shadow-lg shadow-blue-500/25"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                    }`
+                  }
+                >
+                  <div className="flex items-center space-x-3 dark:text-white flex-1 min-w-0">
+                    <item.icon className="w-5 h-5" />
+                    {!collapsed && (
+                      <>
+                        <span className="font-medium ml-2">{item.label}</span>
+                        {item.badge && (
+                          <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                        {item.count && (
+                          <span className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
+                            {item.count}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </NavLink>
+              )}
 
               {/* Sub Menus */}
               {!collapsed && item.submenu && expandedItems.has(item.id) && (
                 <div className="ml-8 mt-2 space-y-1 dark:text-white">
-                  {item.submenu.map((subitem) => {
-                    return (
-                      <button className="w-full text-left p-2 text-sm text_slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg transition-all">
-                        {subitem.label}
-                      </button>
-                    );
-                  })}
+                  {item.submenu.map((subitem) => (
+                    <NavLink
+                      key={subitem.id}
+                      to={`/${item.id}/${subitem.id}`}
+                      className={({ isActive }) =>
+                        `block w-full text-left p-2 text-sm rounded-lg transition-all ${
+                          isActive
+                            ? "text-blue-500 font-bold dark:text-blue-400"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                        }`
+                      }
+                    >
+                      {subitem.label}
+                    </NavLink>
+                  ))}
                 </div>
               )}
             </div>
