@@ -5,12 +5,16 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  storeId?: string;
+  storeName?: string;
+  notes?: string;
 }
 
 interface CartState {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
+  updateQuantity: (id: string, action: 'increase' | 'decrease') => void;
   clearCart: () => void;
   getTotal: () => number;
 }
@@ -35,6 +39,18 @@ export const useCartStore = create<CartState>((set, get) => ({
   removeItem: (id) => set((state) => ({
     items: state.items.filter(item => item.id !== id)
   })),
+
+  updateQuantity: (id, action) => set((state) => {
+    return {
+      items: state.items.map(item => {
+        if (item.id === id) {
+          const newQuantity = action === 'increase' ? item.quantity + 1 : item.quantity - 1;
+          return { ...item, quantity: Math.max(1, newQuantity) }; // Evitar que baje de 1, para eso se usa removeItem
+        }
+        return item;
+      })
+    };
+  }),
   
   clearCart: () => set({ items: [] }),
   
@@ -42,3 +58,5 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
   }
 }));
+
+// Trigger fast refresh to clear state

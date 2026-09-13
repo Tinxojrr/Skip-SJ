@@ -21,6 +21,8 @@ CREATE TABLE usuarios (
     email VARCHAR(255) UNIQUE NOT NULL,
     rol user_role DEFAULT 'student'::user_role,
     push_token VARCHAR(255),
+    apodo VARCHAR(255),
+    avatar_url VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
