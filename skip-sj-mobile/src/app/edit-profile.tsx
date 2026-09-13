@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X, Save, Camera } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -35,21 +36,51 @@ export default function EditProfileScreen() {
     setLoading(true);
     try {
       if (user.id === 'mock-uuid-1234') {
-        useAuthStore.setState((state) => ({
-          profile: {
-            ...(state.profile || {}),
-            apodo: formData.apodo.trim() || null,
-            avatar_url: formData.avatar_url || null,
-          } as any
-        }));
+        // mock ignore
       } else {
+        let finalAvatarUrl = formData.avatar_url;
+        
+        // Si el avatar es una ruta local del teléfono, la subimos a Supabase
+        if (finalAvatarUrl && finalAvatarUrl.startsWith('file://')) {
+          try {
+            // 1. Obtener la extensión
+            const ext = finalAvatarUrl.substring(finalAvatarUrl.lastIndexOf('.') + 1) || 'jpg';
+            const fileName = `${user.id}-${Date.now()}.${ext}`;
+            const filePath = `${user.id}/${fileName}`;
+            
+            // 2. Convertir a Blob
+            const response = await fetch(finalAvatarUrl);
+            const blob = await response.blob();
+            
+            // 3. Subir a Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(filePath, blob, {
+                contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+                upsert: true
+              });
+              
+            if (uploadError) throw uploadError;
+            
+            // 4. Obtener URL pública
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+              
+            finalAvatarUrl = publicUrl;
+          } catch (uploadError) {
+            console.error("Error subiendo imagen:", uploadError);
+            Alert.alert("Error de Imagen", "No se pudo subir la foto de perfil. Tu perfil se guardará sin la foto nueva.");
+          }
+        }
+
         const { data, error } = await supabase
           .from('usuarios')
           .upsert({
             id: user.id,
             email: user.email || '',
             apodo: formData.apodo.trim() || null,
-            avatar_url: formData.avatar_url || null,
+            avatar_url: finalAvatarUrl || null,
             rol: profile?.rol || 'alumno',
             ...(profile ? {} : {
                p_nombre: user.user_metadata?.full_name?.split(' ')[0] || null,
@@ -66,7 +97,7 @@ export default function EditProfileScreen() {
           profile: data || {
             ...(state.profile || {}),
             apodo: formData.apodo.trim() || null,
-            avatar_url: formData.avatar_url || null,
+            avatar_url: finalAvatarUrl || null,
           } as any
         }));
         await fetchProfile();
@@ -82,8 +113,22 @@ export default function EditProfileScreen() {
     }
   };
 
-  const handleSimulatePhoto = () => {
-    Alert.alert('Próximamente', 'Para subir fotos necesitamos instalar expo-image-picker.');
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setFormData(prev => ({ ...prev, avatar_url: result.assets[0].uri }));
+      }
+    } catch (error) {
+      console.error("Error al abrir galería:", error);
+      Alert.alert('Error', 'No se pudo abrir la galería de fotos.');
+    }
   };
 
   // Nombres institucionales fijos
@@ -112,23 +157,37 @@ export default function EditProfileScreen() {
           {/* Foto de Perfil */}
           <View style={{ alignItems: 'center', marginBottom: 32 }}>
             <View style={{ position: 'relative' }}>
-              <View style={{ 
-                width: 120, 
-                height: 120, 
-                borderRadius: 60, 
-                backgroundColor: '#111111', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                shadowColor: '#111111',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.15,
-                shadowRadius: 16,
-                elevation: 4
-              }}>
-                <Text style={{ color: '#F2A900', fontSize: 40, fontFamily: 'Inter-Bold' }}>{initials}</Text>
-              </View>
+              {formData.avatar_url ? (
+                <Image 
+                  source={{ uri: formData.avatar_url }}
+                  style={{ 
+                    width: 120, 
+                    height: 120, 
+                    borderRadius: 60,
+                    borderWidth: 1,
+                    borderColor: 'rgba(17,17,17,0.1)'
+                  }} 
+                />
+              ) : (
+                <View style={{ 
+                  width: 120, 
+                  height: 120, 
+                  borderRadius: 60, 
+                  backgroundColor: '#111111', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  shadowColor: '#111111',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 16,
+                  elevation: 4
+                }}>
+                  <Text style={{ color: '#F2A900', fontSize: 40, fontFamily: 'Inter-Bold' }}>{initials}</Text>
+                </View>
+              )}
+              
               <TouchableOpacity 
-                onPress={handleSimulatePhoto}
+                onPress={handlePickImage}
                 style={{
                   position: 'absolute',
                   bottom: 0,

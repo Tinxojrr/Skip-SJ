@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
@@ -66,22 +66,36 @@ export default function ProfileScreen() {
         
         {/* Header (Avatar & Info) */}
         <View style={{ alignItems: 'center', paddingTop: 40, paddingBottom: 32 }}>
-          <View style={{ 
-            width: 100, 
-            height: 100, 
-            borderRadius: 50, 
-            backgroundColor: '#111111', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            marginBottom: 16,
-            shadowColor: '#111111',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.15,
-            shadowRadius: 16,
-            elevation: 4
-          }}>
-            <Text style={{ color: '#F2A900', fontSize: 36, fontFamily: 'Inter-Bold' }}>{initials || 'DU'}</Text>
-          </View>
+          {profile?.avatar_url ? (
+            <Image 
+              source={{ uri: profile.avatar_url }}
+              style={{
+                width: 100, 
+                height: 100, 
+                borderRadius: 50,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: 'rgba(17,17,17,0.1)'
+              }}
+            />
+          ) : (
+            <View style={{ 
+              width: 100, 
+              height: 100, 
+              borderRadius: 50, 
+              backgroundColor: '#111111', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              marginBottom: 16,
+              shadowColor: '#111111',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.15,
+              shadowRadius: 16,
+              elevation: 4
+            }}>
+              <Text style={{ color: '#F2A900', fontSize: 36, fontFamily: 'Inter-Bold' }}>{initials || 'DU'}</Text>
+            </View>
+          )}
           <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 4 }}>{displayName}</Text>
           {profile?.apodo && (
             <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.4)', marginBottom: 2 }}>{fullName}</Text>
@@ -100,7 +114,7 @@ export default function ProfileScreen() {
         <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
             <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111' }}>Métodos de Pago</Text>
-            <TouchableOpacity onPress={() => handlePressSimulate('Agregar Método')}>
+            <TouchableOpacity onPress={() => router.push('/add-payment')}>
               <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#F2A900' }}>+ Agregar</Text>
             </TouchableOpacity>
           </View>
@@ -175,7 +189,21 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity 
                   key={item.id}
-                  onPress={() => handlePressSimulate(item.title)}
+                  onPress={() => {
+                    if (item.id === 'history') {
+                      router.push('/history');
+                    } else if (item.id === 'favorites') {
+                      router.push('/favorites');
+                    } else if (item.id === 'notifications') {
+                      router.push('/notifications');
+                    } else if (item.id === 'security') {
+                      router.push('/security');
+                    } else if (item.id === 'help') {
+                      router.push('/support');
+                    } else {
+                      handlePressSimulate(item.title);
+                    }
+                  }}
                   style={{ 
                     flexDirection: 'row', 
                     alignItems: 'center', 

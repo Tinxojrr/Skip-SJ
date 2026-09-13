@@ -39,7 +39,7 @@ export default function CartScreen() {
         // Usamos el storeId del primer producto. NOTA: ¡Debe ser un UUID válido en tu BD!
         locatario_id: items[0].storeId || null, 
         estado: 'pendiente_pago',
-        metodo_pago: 'Junaeb BAES', // Por defecto por ahora
+        metodo_pago: 'junaeb', // Valor válido del enum
         monto_total: total,
         codigo_retiro: codigoRetiro,
       }).select().single();
@@ -76,12 +76,8 @@ export default function CartScreen() {
     } catch (error: any) {
       console.error('Error al procesar pago:', error);
       
-      // Manejo de error específico para cuando los productos son mocks (no son UUIDs válidos)
-      if (error.code === '22P02' || error.message?.includes('uuid')) {
-        Alert.alert(
-          "Error de Base de Datos", 
-          "El pago falló porque los productos en el carrito son datos de prueba (mocks). Para que funcione, debes tener productos y locatarios reales en tu base de datos Supabase."
-        );
+      if (error.code === '22P02') {
+        Alert.alert("Error de Formato", "El tipo de dato enviado a la base de datos es incorrecto.");
       } else {
         Alert.alert("Error al procesar", error.message || "Ocurrió un problema al enviar tu pedido.");
       }
@@ -143,7 +139,14 @@ export default function CartScreen() {
                       </Text>
                     </View>
                   )}
-                  <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: '#111111', marginBottom: 4 }}>{item.name}</Text>
+                  <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: '#111111', marginBottom: 2 }}>{item.name}</Text>
+                  {item.notes ? (
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)', marginBottom: 6, fontStyle: 'italic' }}>
+                      Nota: {item.notes}
+                    </Text>
+                  ) : (
+                    <View style={{ marginBottom: 4 }} />
+                  )}
                   <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: '#003D7A' }}>${item.price.toLocaleString('es-CL')}</Text>
                 </View>
                 

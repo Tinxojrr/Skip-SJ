@@ -7,6 +7,7 @@ interface CartItem {
   quantity: number;
   storeId?: string;
   storeName?: string;
+  notes?: string;
 }
 
 interface CartState {
@@ -18,14 +19,8 @@ interface CartState {
   getTotal: () => number;
 }
 
-// Datos de prueba iniciales para visualizar el carrito
-const mockInitialItems: CartItem[] = [
-  { id: '1', name: 'Promo Churrasco Italiano + Bebida', price: 6500, quantity: 1, storeId: '3', storeName: 'Paradiso' },
-  { id: '2', name: 'Porción de Choclo', price: 2200, quantity: 2, storeId: '2', storeName: 'Achoclonado' },
-];
-
 export const useCartStore = create<CartState>((set, get) => ({
-  items: mockInitialItems,
+  items: [],
   
   addItem: (newItem) => set((state) => {
     const existingItem = state.items.find(item => item.id === newItem.id);
@@ -63,3 +58,5 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
   }
 }));
+
+// Trigger fast refresh to clear state
