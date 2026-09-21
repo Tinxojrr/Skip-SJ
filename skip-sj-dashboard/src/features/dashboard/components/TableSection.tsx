@@ -120,7 +120,7 @@ function TableSection() {
                   Productos
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-slate-600">
-                  monto
+                  Monto
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-slate-600">
                   Estado
