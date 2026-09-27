@@ -12,7 +12,7 @@ export default function SupportScreen() {
   };
 
   const handleWhatsApp = () => {
-    Alert.alert("WhatsApp", "Simulando abrir WhatsApp con el soporte de Skip SJ.");
+    Alert.alert("WhatsApp", "Simulando abrir WhatsApp con el soporte de Skip Duoc UC.");
   };
 
   const handleEmail = () => {

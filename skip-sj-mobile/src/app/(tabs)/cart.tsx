@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
@@ -30,57 +31,88 @@ export default function CartScreen() {
     setIsCheckingOut(true);
     
     try {
-      // 1. Crear el Pedido
-      // Generamos un código de retiro aleatorio (ej. "A4F2")
+      // 1. Crear el Pedido como pendiente_pago
       const codigoRetiro = Math.random().toString(36).substring(2, 6).toUpperCase();
 
       const { data: pedido, error: pedidoError } = await supabase.from('pedidos').insert({
         usuario_id: session.user.id,
-        // Usamos el storeId del primer producto. NOTA: ¡Debe ser un UUID válido en tu BD!
         locatario_id: items[0].storeId || null, 
         estado: 'pendiente_pago',
-        metodo_pago: 'junaeb', // Valor válido del enum
+        metodo_pago: 'mercadopago', 
         monto_total: total,
         codigo_retiro: codigoRetiro,
       }).select().single();
       
       if (pedidoError) throw pedidoError;
       
-      // 2. Crear los Ítems del Pedido
       const pedidoItemsData = items.map(item => ({
         pedido_id: pedido.id,
-        producto_id: item.id, // NOTA: ¡Debe ser un UUID válido en tu BD!
+        producto_id: item.id,
         cantidad: item.quantity,
         precio_unitario: item.price,
         subtotal: item.price * item.quantity,
       }));
 
       const { error: itemsError } = await supabase.from('pedido_items').insert(pedidoItemsData);
-      
       if (itemsError) throw itemsError;
 
-      // 3. Éxito
-      Alert.alert(
-        "¡Pedido Confirmado! 🎉",
-        `Tu pago fue exitoso. Tu código de retiro es: ${codigoRetiro}. Te avisaremos cuando esté listo.`,
-        [
-          { 
-            text: "Genial", 
-            onPress: () => {
-              clearCart();
-              router.push('/');
-            } 
-          }
-        ]
-      );
+      // 2. Generar link de pago de MercadoPago
+      // REEMPLAZA ESTE TOKEN POR EL TUYO DE MERCADOPAGO DEVELOPERS (Credenciales de Prueba)
+      const MP_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MP_ACCESS_TOKEN || 'APP_USR-7092843477146522-091522-dfb8df1a44e5d654f4949514b8a2e1d7-2003884399'; 
+      
+      const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              title: 'Pedido en Skip Duoc UC',
+              quantity: 1,
+              unit_price: total,
+            }
+          ],
+          // URLs de retorno para la app (Deep Linking)
+          back_urls: {
+            success: 'skipduocuc://',
+            failure: 'skipduocuc://',
+            pending: 'skipduocuc://'
+          },
+          auto_return: 'approved'
+        })
+      });
+
+      const preference = await mpResponse.json();
+
+      if (preference.init_point) {
+        // 3. Abrir Navegador con el Checkout
+        await WebBrowser.openBrowserAsync(preference.init_point);
+        
+        // 4. Al volver, asumimos pago exitoso para el MVP
+        await supabase.from('pedidos').update({ estado: 'pagado' }).eq('id', pedido.id);
+
+        Alert.alert(
+          "¡Pago Exitoso! 🎉",
+          `Tu pedido fue confirmado. Tu código de retiro es: ${codigoRetiro}. Te avisaremos cuando esté listo.`,
+          [
+            { 
+              text: "Genial", 
+              onPress: () => {
+                clearCart();
+                router.push('/');
+              } 
+            }
+          ]
+        );
+      } else {
+        throw new Error(preference.message || 'Error al generar link de MercadoPago');
+      }
+
     } catch (error: any) {
       console.error('Error al procesar pago:', error);
-      
-      if (error.code === '22P02') {
-        Alert.alert("Error de Formato", "El tipo de dato enviado a la base de datos es incorrecto.");
-      } else {
-        Alert.alert("Error al procesar", error.message || "Ocurrió un problema al enviar tu pedido.");
-      }
+      Alert.alert("Error al procesar", error.message || "Ocurrió un problema al enviar tu pedido.");
     } finally {
       setIsCheckingOut(false);
     }
