@@ -207,7 +207,7 @@ export default function AuthScreen() {
                 <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: '#003D7A', textTransform: 'uppercase', letterSpacing: 0.5 }}>San Joaquín</Text>
               </View>
 
-              <Text style={{ color: '#1A1A1A', fontSize: 48, fontFamily: 'Inter-Bold', lineHeight: 48, marginBottom: 8 }}>Skip SJ</Text>
+              <Text style={{ color: '#1A1A1A', fontSize: 48, fontFamily: 'Inter-Bold', lineHeight: 48, marginBottom: 8 }}>Skip Duoc UC</Text>
               <Text style={{ color: 'rgba(26,26,26,0.6)', fontSize: 16, fontFamily: 'Inter-Regular' }}>Sin filas. Sin espera.</Text>
             </View>
 
