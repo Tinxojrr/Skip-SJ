@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react-native';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag, History } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
@@ -11,6 +11,7 @@ type Order = {
   estado: string;
   monto_total: number;
   created_at: string;
+  codigo_retiro?: string;
   locatarios: {
     nombre: string;
   } | null;
@@ -22,34 +23,6 @@ type Order = {
   }[];
 };
 
-// Datos de prueba por si la base de datos está vacía
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 'mock-1',
-    estado: 'completado',
-    monto_total: 4500,
-    created_at: new Date().toISOString(),
-    locatarios: { nombre: 'Casino Duoc' },
-    pedido_items: [{ cantidad: 1, productos: { nombre_producto: 'Menú Junaeb Tradicional' } }]
-  },
-  {
-    id: 'mock-2',
-    estado: 'cancelado',
-    monto_total: 2000,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    locatarios: { nombre: 'Cafetería Central' },
-    pedido_items: [{ cantidad: 2, productos: { nombre_producto: 'Café Latte' } }]
-  },
-  {
-    id: 'mock-3',
-    estado: 'completado',
-    monto_total: 3500,
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    locatarios: { nombre: 'El Bajón Estudiantil' },
-    pedido_items: [{ cantidad: 1, productos: { nombre_producto: 'Sándwich Ave Palta' } }]
-  }
-];
-
 export default function OrderHistoryScreen() {
   const router = useRouter();
   const { session } = useAuthStore();
@@ -58,17 +31,41 @@ export default function OrderHistoryScreen() {
 
   useEffect(() => {
     fetchOrders();
+
+    if (!session?.user?.id) return;
+
+    // Escuchar cambios de estado en tiempo real
+    const channel = supabase
+      .channel('public:pedidos')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'pedidos',
+          filter: `usuario_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          setOrders(prevOrders => prevOrders.map(order => {
+            if (order.id === payload.new.id) {
+              return { ...order, estado: payload.new.estado };
+            }
+            return order;
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [session]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      if (!session?.user?.id) {
-        setOrders(MOCK_ORDERS);
-        return;
-      }
+      if (!session?.user?.id) return;
 
-      // Consulta real a Supabase (join con locatarios y pedido_items -> productos)
       const { data, error } = await supabase
         .from('pedidos')
         .select(`
@@ -76,6 +73,7 @@ export default function OrderHistoryScreen() {
           estado,
           monto_total,
           created_at,
+          codigo_retiro,
           locatarios ( nombre ),
           pedido_items (
             cantidad,
@@ -86,16 +84,10 @@ export default function OrderHistoryScreen() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      if (data && data.length > 0) {
-        setOrders(data as any);
-      } else {
-        // Fallback a mock si no hay historial real
-        setOrders(MOCK_ORDERS);
-      }
+      if (data) setOrders(data as any);
+      
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setOrders(MOCK_ORDERS);
     } finally {
       setLoading(false);
     }
@@ -109,10 +101,16 @@ export default function OrderHistoryScreen() {
       case 'cancelado':
       case 'rechazada':
         return { color: '#E53E3E', text: 'Cancelado', icon: XCircle };
-      case 'pendiente':
-      case 'pendiente_pago':
+      case 'listo_retiro':
+      case 'listo para retiro':
+        return { color: '#003D7A', text: '¡Listo para Retiro!', icon: CheckCircle2 };
+      case 'en_preparacion':
+      case 'en preparacion':
+      case 'preparando':
+        return { color: '#FFBF00', text: 'En preparación', icon: Clock };
+      case 'pagado':
       default:
-        return { color: '#F2A900', text: 'En proceso', icon: Clock };
+        return { color: '#F2A900', text: 'Esperando al local...', icon: Clock };
     }
   };
 
@@ -129,7 +127,6 @@ export default function OrderHistoryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(17,17,17,0.05)' }}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, marginLeft: -8 }}>
           <ArrowLeft color="#111111" size={24} />
@@ -137,7 +134,6 @@ export default function OrderHistoryScreen() {
         <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111', marginLeft: 12 }}>Historial de Pedidos</Text>
       </View>
 
-      {/* Content */}
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#F2A900" />
@@ -148,7 +144,6 @@ export default function OrderHistoryScreen() {
             const status = getStatusInfo(order.estado);
             const StatusIcon = status.icon;
             
-            // Texto de resumen de items (Ej: "1x Menú Junaeb...")
             const itemsSummary = order.pedido_items
               ?.map(item => `${item.cantidad}x ${item.productos?.nombre_producto || 'Producto'}`)
               .join(', ') || 'Productos varios';
@@ -169,7 +164,6 @@ export default function OrderHistoryScreen() {
                   elevation: 1
                 }}
               >
-                {/* Order Header: Local & Price */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 12 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(17,17,17,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
@@ -189,25 +183,26 @@ export default function OrderHistoryScreen() {
                   </Text>
                 </View>
 
-                {/* Items Summary */}
+                {order.codigo_retiro && (
+                  <View style={{ backgroundColor: 'rgba(0,61,122,0.05)', borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: 'rgba(17,17,17,0.5)' }}>CÓDIGO DE RETIRO</Text>
+                    <Text style={{ fontFamily: 'Inter-Bold', fontSize: 24, color: '#003D7A', marginTop: 2, letterSpacing: 2 }}>{order.codigo_retiro}</Text>
+                  </View>
+                )}
+
                 <View style={{ paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(17,17,17,0.05)', marginBottom: 12 }}>
                   <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: 'rgba(17,17,17,0.7)', lineHeight: 20 }}>
                     {itemsSummary}
                   </Text>
                 </View>
 
-                {/* Footer: Status & Reorder */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: `${status.color}15`, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: `${status.color}15`, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 }}>
                     <StatusIcon color={status.color} size={14} />
-                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: status.color, marginLeft: 6 }}>
+                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: status.color, marginLeft: 6 }}>
                       {status.text}
                     </Text>
                   </View>
-
-                  <TouchableOpacity style={{ backgroundColor: '#111111', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16 }}>
-                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: '#FFFFFF' }}>Volver a pedir</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             );
@@ -229,4 +224,3 @@ export default function OrderHistoryScreen() {
     </SafeAreaView>
   );
 }
-

@@ -6,7 +6,7 @@ import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
-import { Minus, Plus, Trash2, ShoppingCart, Receipt, Store } from 'lucide-react-native';
+import { Minus, Plus, Trash2, ShoppingCart, Receipt, Store, CreditCard, ChevronRight } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 
 export default function CartScreen() {
@@ -20,99 +20,45 @@ export default function CartScreen() {
   const total = subtotal + serviceFee;
 
   const handleCheckout = async () => {
-    if (!session?.user) {
-      Alert.alert('Sesión requerida', 'Debes iniciar sesión para realizar un pedido.');
-      router.push('/auth');
-      return;
-    }
-
-    if (items.length === 0) return;
-
+    if (items.length === 0 || !session) return;
+    
     setIsCheckingOut(true);
     
     try {
-      // 1. Crear el Pedido como pendiente_pago
       const codigoRetiro = Math.random().toString(36).substring(2, 6).toUpperCase();
 
+      // 1. Crear el Pedido directamente como PAGADO
       const { data: pedido, error: pedidoError } = await supabase.from('pedidos').insert({
         usuario_id: session.user.id,
         locatario_id: items[0].storeId || null, 
-        estado: 'pendiente_pago',
-        metodo_pago: 'mercadopago', 
+        estado: 'pagado',
         monto_total: total,
-        codigo_retiro: codigoRetiro,
+        codigo_retiro: codigoRetiro
       }).select().single();
-      
-      if (pedidoError) throw pedidoError;
-      
-      const pedidoItemsData = items.map(item => ({
-        pedido_id: pedido.id,
-        producto_id: item.id,
-        cantidad: item.quantity,
-        precio_unitario: item.price,
-        subtotal: item.price * item.quantity,
-      }));
 
-      const { error: itemsError } = await supabase.from('pedido_items').insert(pedidoItemsData);
+      if (pedidoError) throw pedidoError;
+
+      // 2. Insertar los items
+      const { error: itemsError } = await supabase.from('pedido_items').insert(
+        items.map(item => ({
+          pedido_id: pedido.id,
+          producto_id: item.id,
+          cantidad: item.quantity,
+          precio_unitario: item.price,
+          subtotal: item.price * item.quantity
+        }))
+      );
+
       if (itemsError) throw itemsError;
 
-      // 2. Generar link de pago de MercadoPago
-      // REEMPLAZA ESTE TOKEN POR EL TUYO DE MERCADOPAGO DEVELOPERS (Credenciales de Prueba)
-      const MP_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MP_ACCESS_TOKEN || 'APP_USR-7092843477146522-091522-dfb8df1a44e5d654f4949514b8a2e1d7-2003884399'; 
-      
-      const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              title: 'Pedido en Skip Duoc UC',
-              quantity: 1,
-              unit_price: total,
-            }
-          ],
-          // URLs de retorno para la app (Deep Linking)
-          back_urls: {
-            success: 'skipduocuc://',
-            failure: 'skipduocuc://',
-            pending: 'skipduocuc://'
-          },
-          auto_return: 'approved'
-        })
-      });
-
-      const preference = await mpResponse.json();
-
-      if (preference.init_point) {
-        // 3. Abrir Navegador con el Checkout
-        await WebBrowser.openBrowserAsync(preference.init_point);
-        
-        // 4. Al volver, asumimos pago exitoso para el MVP
-        await supabase.from('pedidos').update({ estado: 'pagado' }).eq('id', pedido.id);
-
-        Alert.alert(
-          "¡Pago Exitoso! 🎉",
-          `Tu pedido fue confirmado. Tu código de retiro es: ${codigoRetiro}. Te avisaremos cuando esté listo.`,
-          [
-            { 
-              text: "Genial", 
-              onPress: () => {
-                clearCart();
-                router.push('/');
-              } 
-            }
-          ]
-        );
-      } else {
-        throw new Error(preference.message || 'Error al generar link de MercadoPago');
-      }
-
-    } catch (error: any) {
-      console.error('Error al procesar pago:', error);
-      Alert.alert("Error al procesar", error.message || "Ocurrió un problema al enviar tu pedido.");
+      Alert.alert(
+        "¡Pago Exitoso!", 
+        `El pago con tu Visa Débito fue procesado de inmediato. Tu código de retiro es: ${codigoRetiro}.`, 
+        [{ text: "Ver en Kanban", onPress: () => { clearCart(); router.push('/history'); } }]
+      );
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'No pudimos procesar tu pedido. Intenta nuevamente.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -241,7 +187,25 @@ export default function CartScreen() {
           </View>
         </Animated.View>
 
-      </ScrollView>
+      
+        {/* Tarjeta Guardada Simulacion */}
+        <Animated.View entering={FadeIn.delay(400)} style={{ marginTop: 24, marginBottom: 120 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <CreditCard color="#111111" size={20} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111' }}>Medio de pago</Text>
+          </View>
+          <TouchableOpacity style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#4ADE80' }}>
+            <View style={{ width: 40, height: 28, backgroundColor: '#F3F4F6', borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginRight: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' }}>
+               <CreditCard color="#111111" size={16} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: '#111111' }}>Visa Débito</Text>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)' }}>Terminada en 4242</Text>
+            </View>
+            <ChevronRight color="rgba(17,17,17,0.3)" size={20} />
+          </TouchableOpacity>
+        </Animated.View>
+</ScrollView>
 
       {/* CTA Pagar Sticky */}
       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FAFAFA', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: 'rgba(17,17,17,0.05)' }}>
@@ -262,10 +226,19 @@ export default function CartScreen() {
             shadowRadius: 12
           }}
         >
-          <Text style={{ color: '#111111', fontFamily: 'Inter-Bold', fontSize: 16 }}>Ir a Pagar</Text>
+          <Text style={{ color: '#111111', fontFamily: 'Inter-Bold', fontSize: 16 }}>Confirmar Pago</Text>
           <Text style={{ color: '#111111', fontFamily: 'Inter-Bold', fontSize: 18 }}>${total.toLocaleString('es-CL')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
+
+
+
+
+
+
+
+
+
