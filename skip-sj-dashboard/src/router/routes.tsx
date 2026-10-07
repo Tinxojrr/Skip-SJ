@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardPage } from '../features/dashboard';
 import { MainLayout } from '../components/Layout/MainLayout';
 import { KanbanBoard } from '../features/dashboard/kanban-pedidos';
+import { ProductsPage } from '../features/products';
 import { SignInPage } from '../features/auth/SignInPage';
 import { SignUpPage } from '../features/auth/SignUpPage';
 
@@ -18,6 +19,8 @@ export const AppRoutes = () => {
             <Route element={<MainLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/ordering/kanban" element={<KanbanBoard />} />
+                <Route path="/ordering/products" element={<ProductsPage />} />
+                <Route path="/inventory" element={<ProductsPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

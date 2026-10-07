@@ -95,7 +95,7 @@ interface SidebarProps {
 }
 
 function Sidebar({ collapsed }: SidebarProps) {
-  const [expandedItems, setExpendedItems] = useState(new Set(["analytics"]));
+  const [expandedItems, setExpendedItems] = useState(new Set(["analytics", "ordering"]));
 
   const toggleExpanded = (itemid: string) => {
     const newExpanded = new Set(expandedItems);

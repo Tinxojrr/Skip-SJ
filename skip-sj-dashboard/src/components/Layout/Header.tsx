@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, Filter, Menu, Plus, Search, Settings, Sun, Moon, LogOut } from "lucide-react";
+import { Bell, Menu, Sun, Moon, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";

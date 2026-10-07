@@ -72,6 +72,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('usuario_admin_id', userId)
           .single();
         
+        if (locError && locError.code !== 'PGRST116') {
+          console.warn('Locatario no encontrado o error:', locError.message);
+        }
+        
         if (locatarioData) {
           setLocatarioId(locatarioData.id);
         }

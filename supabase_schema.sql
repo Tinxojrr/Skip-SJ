@@ -183,3 +183,12 @@ CREATE POLICY "Alumnos ven sus transacciones" ON transacciones_pago FOR SELECT U
 CREATE POLICY "Alumnos crean transacciones" ON transacciones_pago FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM pedidos WHERE pedidos.id = transacciones_pago.pedido_id AND pedidos.usuario_id = auth.uid())
 );
+
+-- 4. Administración de Menú y Productos (Dashboard)
+CREATE POLICY "Permitir insertar productos" ON productos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir actualizar productos" ON productos FOR UPDATE USING (true);
+CREATE POLICY "Permitir eliminar productos" ON productos FOR DELETE USING (true);
+
+CREATE POLICY "Permitir insertar categorias" ON categorias_menu FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir actualizar categorias" ON categorias_menu FOR UPDATE USING (true);
+CREATE POLICY "Permitir eliminar categorias" ON categorias_menu FOR DELETE USING (true);
