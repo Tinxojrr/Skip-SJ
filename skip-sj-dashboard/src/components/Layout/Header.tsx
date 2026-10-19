@@ -1,8 +1,9 @@
-import { Bell, ChevronDown, Filter, Menu, Plus, Search, Settings, Sun, Moon, LogOut } from "lucide-react";
+import { Menu, Sun, Moon, LogOut, Store } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { CopilotoIABtn } from "../../features/dashboard/components/CopilotoIABtn";
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -11,10 +12,10 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
 }
 
-function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderProps) {
-  const { user, role, locatarioId, changeLocatarioId, signOut } = useAuth();
+export function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderProps) {
+  const { user, role, locatarioId, nombreLocal, changeLocatarioId, signOut } = useAuth();
   const navigate = useNavigate();
-  const [locales, setLocales] = useState<{id: string, nombre: string}[]>([]);
+  const [locales, setLocales] = useState<{ id: string; nombre: string }[]>([]);
 
   useEffect(() => {
     if (role === 'super_admin') {
@@ -30,40 +31,50 @@ function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderProps) {
   };
 
   return (
-    <div className="bg-white/80 dark:bg-slate-900/80 backdrop:xl border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4">
+    <header className="bg-white/80 dark:bg-[#0d0d11]/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800/80 px-6 py-3.5 z-10 shrink-0">
       <div className="flex items-center justify-between">
         {/* Left Section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <button
-            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" 
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
             onClick={onToggleSidebar}
+            aria-label="Alternar menú"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="hidden md:block">
-            <h1 className="text-2xl font-black text-slate-800 dark:text-white">
-              Dashboard
-            </h1>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              Bienvenido a Skip Duoc UC. Aquí está lo que necesitas para administrar el día de hoy.
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold tracking-tight text-zinc-900 dark:text-white">
+                {role === "store_admin" ? (nombreLocal || "Mi Local") : "Panel Central Duoc UC"}
+              </span>
+              <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/60">
+                Sede San Joaquín
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">
+              {role === "store_admin" 
+                ? "Gestión de pedidos en cocina y caja" 
+                : "Monitoreo general de la red de casinos"}
             </p>
           </div>
         </div>
-        
-        {/* Center Section - Admin Selector */}
-        <div className="flex-1 max-w-md mx-8 flex justify-center">
+
+        {/* Center Section - Admin Selector (solo para Super Admin) */}
+        <div className="flex-1 max-w-xs mx-4 hidden md:flex justify-center">
           {role === 'super_admin' && (
-            <div className="flex items-center space-x-2 bg-slate-100 p-2 rounded-lg">
-              <span className="text-sm font-bold text-slate-600">Simular Local:</span>
-              <select 
-                className="bg-white border rounded p-1 text-sm"
+            <div className="flex items-center space-x-2 bg-zinc-100 dark:bg-zinc-800/80 p-1.5 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700/60">
+              <Store className="w-3.5 h-3.5 text-zinc-500" />
+              <select
+                className="bg-transparent text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
                 value={locatarioId || ""}
                 onChange={(e) => changeLocatarioId(e.target.value)}
               >
-                <option value="" disabled>Seleccione local...</option>
-                {locales.map(l => (
-                  <option key={l.id} value={l.id}>{l.nombre}</option>
+                <option value="" disabled className="dark:bg-zinc-900">Seleccionar local...</option>
+                {locales.map((l) => (
+                  <option key={l.id} value={l.id} className="dark:bg-zinc-900">
+                    {l.nombre}
+                  </option>
                 ))}
               </select>
             </div>
@@ -71,34 +82,41 @@ function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderProps) {
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center space-x-3">
-          <button className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onClick={onToggleDarkMode}>
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <div className="flex items-center space-x-2.5">
+          {/* Botón Copiloto IA */}
+          <CopilotoIABtn />
+
+          {/* Dark Mode Toggle */}
+          <button
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
+            onClick={onToggleDarkMode}
+            title={darkMode ? "Activar modo claro" : "Activar modo oscuro"}
+          >
+            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <button className="relative p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
-
-          {/* User Profile */}
-          <div className="flex items-center space-x-3 pl-3 border-l border-slate-200 dark:border-slate-700">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {/* User & Logout */}
+          <div className="flex items-center space-x-3 pl-3 border-l border-zinc-200 dark:border-zinc-800">
+            <div className="hidden lg:block text-right">
+              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[150px]">
                 {user?.email || "Usuario"}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                {role ? role.replace('_', ' ') : "Cargando..."}
+              <p className="text-[10px] text-zinc-400 font-mono">
+                {role === "store_admin" ? "Cajero / Cocina" : "Super Admin"}
               </p>
             </div>
-            
-            {/* Botón Logout */}
-            <button onClick={handleSignOut} className="p-2 ml-2 text-red-500 hover:bg-red-50 rounded-lg transition" title="Cerrar sesión">
-              <LogOut className="w-5 h-5" />
+
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
 

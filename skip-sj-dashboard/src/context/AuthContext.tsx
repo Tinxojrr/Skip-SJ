@@ -6,6 +6,7 @@ type AuthContextType = {
   user: User | null;
   role: string | null;
   locatarioId: string | null;
+  nombreLocal: string | null;
   loading: boolean;
   changeLocatarioId: (id: string | null) => void;
   signOut: () => Promise<void>;
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
   locatarioId: null,
+  nombreLocal: null,
   loading: true,
   changeLocatarioId: () => {},
   signOut: async () => {},
@@ -24,10 +26,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [locatarioId, setLocatarioId] = useState<string | null>(null);
+  const [nombreLocal, setNombreLocal] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Buscar la sesin inicial
+    // Buscar la sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -45,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setRole(null);
         setLocatarioId(null);
+        setNombreLocal(null);
         setLoading(false);
       }
     });
@@ -66,15 +70,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // 2. Si es store_admin, buscar su local (locatario)
       if (userData.rol === 'store_admin') {
-        const { data: locatarioData, error: locError } = await supabase
+        const { data: locatarioData } = await supabase
           .from('locatarios')
-          .select('id')
+          .select('id, nombre')
           .eq('usuario_admin_id', userId)
           .single();
         
         if (locatarioData) {
           setLocatarioId(locatarioData.id);
+          setNombreLocal(locatarioData.nombre);
         }
+      } else if (userData.rol === 'super_admin') {
+        setNombreLocal('Administración General');
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -83,9 +90,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const changeLocatarioId = (id: string | null) => {
+  const changeLocatarioId = async (id: string | null) => {
     if (role === 'super_admin') {
       setLocatarioId(id);
+      if (id) {
+        const { data } = await supabase.from('locatarios').select('nombre').eq('id', id).single();
+        if (data) setNombreLocal(data.nombre);
+      } else {
+        setNombreLocal('Todos los locales');
+      }
     }
   };
 
@@ -94,7 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, locatarioId, loading, changeLocatarioId, signOut }}>
+    <AuthContext.Provider value={{ user, role, locatarioId, nombreLocal, loading, changeLocatarioId, signOut }}>
       {children}
     </AuthContext.Provider>
   );

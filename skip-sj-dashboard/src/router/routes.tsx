@@ -2,25 +2,33 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardPage } from '../features/dashboard';
 import { MainLayout } from '../components/Layout/MainLayout';
 import { KanbanBoard } from '../features/dashboard/kanban-pedidos';
+import { ProductosPage } from '../features/productos/ProductosPage';
+import { HistorialPedidosPage } from '../features/pedidos/HistorialPedidosPage';
 import { SignInPage } from '../features/auth/SignInPage';
 import { SignUpPage } from '../features/auth/SignUpPage';
+import { useAuth } from '../context/AuthContext';
 
 export const AppRoutes = () => {
-    return(
-        <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />}/>
-            
-            {/* Rutas Públicas (Auth) */}
-            <Route path="/auth/signin" element={<SignInPage />} />
-            <Route path="/auth/signup" element={<SignUpPage />} />
+  const { role } = useAuth();
+  const defaultHome = role === 'store_admin' ? '/ordering/kanban' : '/dashboard';
 
-            {/* Rutas Privadas (Dashboard) */}
-            <Route element={<MainLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/ordering/kanban" element={<KanbanBoard />} />
-            </Route>
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to={defaultHome} replace />} />
+      
+      {/* Rutas Públicas (Auth) */}
+      <Route path="/auth/signin" element={<SignInPage />} />
+      <Route path="/auth/signup" element={<SignUpPage />} />
 
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-    )
-}
+      {/* Rutas Privadas */}
+      <Route element={<MainLayout />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/ordering/kanban" element={<KanbanBoard />} />
+        <Route path="/productos" element={<ProductosPage />} />
+        <Route path="/historial" element={<HistorialPedidosPage />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to={defaultHome} replace />} />
+    </Routes>
+  );
+};

@@ -1,246 +1,179 @@
 import {
   BarChart3,
-  Calendar,
-  ChevronDown,
-  CreditCard,
-  FileText,
   LayoutDashboard,
-  MessageSquare,
-  Monitor,
   Package,
-  Settings,
   ShoppingBag,
+  Store,
   Users,
+  UtensilsCrossed,
+  History
 } from "lucide-react";
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
-const menuItems = [
-  {
-    id: "dashboard",
-    icon: LayoutDashboard,
-    label: "Dashboard",
-    active: true,
-    badge: "New",
-  },
-
-  {
-    id: "analytics",
-    icon: BarChart3,
-    label: "Análisis",
-    submenu: [
-      { id: "overview", label: "Resumen" },
-      { id: "reports", label: "Reportes" },
-      { id: "insights", label: "Información " },
-    ],
-  },
-  {
-    id: "users",
-    icon: Users,
-    label: "Usuarios",
-    count: "2.4k",
-    submenu: [
-      { id: "all-users", label: "Todos los Usuarios" },
-      { id: "roles", label: "Roles & Permisos" },
-      { id: "activity", label: "Actividad de Usuarios campus food" },
-    ],
-  },
-  {
-    id: "ordering",
-    icon: ShoppingBag,
-    label: "pedidos de comida",
-    submenu: [
-      { id: "kanban", label: "Kanban Activo" },
-      { id: "products", label: "Productos" },
-      { id: "orders", label: "Ordenes" },
-      { id: "customers", label: "Clientes" },
-    ],
-  },
-  {
-    id: "inventory",
-    icon: Package,
-    label: "Inventario",
-    count: "847",
-  },
-  {
-    id: "transactions",
-    icon: CreditCard,
-    label: "Transacciones",
-  },
-  {
-    id: "messages",
-    icon: MessageSquare,
-    label: "Mensajes",
-    badge: "10",
-  },
-  {
-    id: "calendar",
-    icon: Calendar,
-    label: "Calendario",
-  },
-  {
-    id: "reports",
-    icon: FileText,
-    label: "Reportes",
-  },
-  {
-    id: "settings",
-    icon: Settings,
-    label: "Configuración",
-  },
-];
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
 }
 
-function Sidebar({ collapsed }: SidebarProps) {
-  const [expandedItems, setExpendedItems] = useState(new Set(["analytics"]));
+interface MenuItem {
+  id: string;
+  icon: any;
+  label: string;
+  badge?: string;
+  badgeColor?: string;
+  count?: string;
+}
 
-  const toggleExpanded = (itemid: string) => {
-    const newExpanded = new Set(expandedItems);
+export function Sidebar({ collapsed }: SidebarProps) {
+  const { user, role, nombreLocal } = useAuth();
 
-    if (newExpanded.has(itemid)) {
-      newExpanded.delete(itemid);
-    } else {
-      newExpanded.add(itemid);
-    }
-    setExpendedItems(newExpanded);
-  };
+  // Menú exclusivo para ENCARGADOS DE LOCAL (Cajero / Cocina)
+  const storeAdminItems: MenuItem[] = [
+    {
+      id: "ordering/kanban",
+      icon: ShoppingBag,
+      label: "Pedidos en Vivo",
+      badge: "Cocina",
+      badgeColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+    },
+    {
+      id: "historial",
+      icon: History,
+      label: "Historial de Pedidos",
+    },
+    {
+      id: "productos",
+      icon: Package,
+      label: "Carta y Productos",
+    },
+    {
+      id: "dashboard",
+      icon: BarChart3,
+      label: "Ventas y Resumen",
+    },
+  ];
+
+  // Menú para ADMINISTRADORES GENERALES DE LA PLATAFORMA (Super Admin)
+  const superAdminItems: MenuItem[] = [
+    {
+      id: "dashboard",
+      icon: LayoutDashboard,
+      label: "Métricas Globales",
+      badge: "Sede",
+      badgeColor: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+    },
+    {
+      id: "ordering/kanban",
+      icon: UtensilsCrossed,
+      label: "Monitor de Locales",
+    },
+    {
+      id: "productos",
+      icon: Package,
+      label: "Catálogo General",
+    },
+    {
+      id: "admin-users",
+      icon: Users,
+      label: "Usuarios Duoc",
+      count: "Sede SJ",
+    },
+  ];
+
+  const currentMenuItems = role === "store_admin" ? storeAdminItems : superAdminItems;
+
   return (
-    <div
-      className={`${collapsed ? "w-20" : "w-72"} transition-all duration-300 ease-in-out 
-    bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl 
-    border-r border-slate-200/50 dark:border-slate-700/50 
-    flex flex-col relative z-10`}
+    <aside
+      className={`${collapsed ? "w-20" : "w-64"} transition-all duration-300 ease-in-out 
+      bg-white dark:bg-[#0d0d11]
+      border-r border-zinc-200 dark:border-zinc-800/80 
+      flex flex-col relative z-20 shrink-0`}
     >
-      {/* Logo */}
-      <div className="p-6 border-slate-200/50 dark:border-slate-700/50 ">
+      {/* Logo & Marca */}
+      <div className="p-5 border-b border-zinc-200 dark:border-zinc-800/80">
         <div className="flex items-center space-x-3">
-          <div
-            className="w-10 h-10 bg-linear-to-b from-yellow-500 to-blue-600 rounded-xl
-                    flex items-center justify-center shadow-lg"
-          >
-            <Monitor className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-linear-to-b from-[#F5A623] to-[#0B2A6B] rounded-xl flex items-center justify-center shadow-sm">
+            <Store className="w-5 h-5 text-white" />
           </div>
 
-          {/* Conditional Rendering */}
           {!collapsed && (
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-                Skip SJ
+            <div className="min-w-0">
+              <h1 className="text-base font-extrabold tracking-tight text-zinc-900 dark:text-white">
+                Skip <span className="text-[#0B2A6B] dark:text-[#F5A623]">Duoc UC</span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Admin Panel
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 truncate">
+                {role === "store_admin" ? "Terminal de Local" : "Admin Central"}
               </p>
             </div>
           )}
         </div>
       </div>
-      {/* Navigation*/}
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-auto">
-        {menuItems.map((item) => {
-          return (
-            <div key={item.id}>
-              {item.submenu ? (
-                <button
-                  className="w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                  onClick={() => toggleExpanded(item.id)}
-                >
-                  <div className="flex items-center space-x-3 dark:text-white flex-1 min-w-0">
-                    <item.icon className="w-5 h-5" />
-                    {!collapsed && (
-                      <span className="font-medium ml-2">{item.label}</span>
-                    )}
-                  </div>
-                  {!collapsed && (
-                    <ChevronDown className="w-4 h-4 transition-transform dark:text-white" />
-                  )}
-                </button>
-              ) : (
-                <NavLink
-                  to={`/${item.id}`}
-                  className={({ isActive }) =>
-                    `w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? "bg-linear-to-r from-yellow-500 to-blue-600 text-white shadow-lg shadow-blue-500/25"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                    }`
-                  }
-                >
-                  <div className="flex items-center space-x-3 dark:text-white flex-1 min-w-0">
-                    <item.icon className="w-5 h-5" />
-                    {!collapsed && (
-                      <>
-                        <span className="font-medium ml-2">{item.label}</span>
-                        {item.badge && (
-                          <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                            {item.badge}
-                          </span>
-                        )}
-                        {item.count && (
-                          <span className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full">
-                            {item.count}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </NavLink>
-              )}
 
-              {/* Sub Menus */}
-              {!collapsed && item.submenu && expandedItems.has(item.id) && (
-                <div className="ml-8 mt-2 space-y-1 dark:text-white">
-                  {item.submenu.map((subitem) => (
-                    <NavLink
-                      key={subitem.id}
-                      to={`/${item.id}/${subitem.id}`}
-                      className={({ isActive }) =>
-                        `block w-full text-left p-2 text-sm rounded-lg transition-all ${
-                          isActive
-                            ? "text-blue-500 font-bold dark:text-blue-400"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                        }`
-                      }
-                    >
-                      {subitem.label}
-                    </NavLink>
-                  ))}
-                </div>
+      {/* Navegación por Rol */}
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {!collapsed && (
+          <div className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            {role === "store_admin" ? "Operaciones del Local" : "Gestión Central"}
+          </div>
+        )}
+
+        {currentMenuItems.map((item) => (
+          <NavLink
+            key={item.id}
+            to={`/${item.id}`}
+            className={({ isActive }) =>
+              `w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? "bg-zinc-900 text-white dark:bg-zinc-800/90 dark:text-white dark:border dark:border-zinc-700/60 shadow-xs font-semibold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`
+            }
+          >
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <item.icon className="w-4 h-4 shrink-0 opacity-80" />
+              {!collapsed && (
+                <span className="truncate">{item.label}</span>
               )}
             </div>
-          );
-        })}
+
+            {!collapsed && (
+              <div className="flex items-center space-x-1.5 shrink-0">
+                {item.badge && (
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${item.badgeColor || 'bg-zinc-700 text-zinc-200'}`}>
+                    {item.badge}
+                  </span>
+                )}
+                {item.count && (
+                  <span className="px-2 py-0.5 text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md font-mono">
+                    {item.count}
+                  </span>
+                )}
+              </div>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
-      {/* User Profile */}
+      {/* Perfil del Local Autenticado */}
       {!collapsed && (
-        <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/50">
-          <div
-            className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50
-                dark:bg-slate-800/50"
-          >
-            <img
-              src="../src/assets/user-profile.png"
-              alt="user profile"
-              className="w-10 h-10 rounded-full ring-2 ring-blue-500"
-            />
+        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/80">
+          <div className="flex items-center space-x-3 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-zinc-700 to-zinc-900 dark:from-zinc-800 dark:to-zinc-700 border border-zinc-600/30 flex items-center justify-center text-white font-bold text-xs shrink-0">
+              {nombreLocal ? nombreLocal.charAt(0).toUpperCase() : "S"}
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800 dark:text-white truncate">
-                  FlixDev
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  Administrator
-                </p>
-              </div>
+              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">
+                {nombreLocal || (role === "store_admin" ? "Mi Local" : "Administrador")}
+              </p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate font-mono">
+                {user?.email || "Usuario"}
+              </p>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </aside>
   );
 }
 

@@ -1,139 +1,161 @@
-import { BarChart, Bar, XAxis,YAxis, CartesianGrid, ResponsiveContainer,Tooltip} from "recharts"  
+import { useEffect, useState, useCallback } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { supabase } from "../../../lib/supabase";
+import { useAuth } from "../../../context/AuthContext";
+import { DollarSign, TrendingUp } from "lucide-react";
 
-
-function RevnueChart() {
-
-    const data = [
-        {
-            month: "Enero", revenue: 45000, expenses: 32000
-        },
-        {
-            month: "Febrero", revenue: 52000, expenses: 38000
-        },
-        {
-            month: "Marzo", revenue: 48000, expenses: 35000
-        },
-        {
-            month: "Abril", revenue: 61000, expenses: 42000
-        },
-        {
-            month: "Mayo", revenue: 55000, expenses: 40000
-        },
-        {
-            month: "Junio", revenue: 67000, expenses: 45000
-        },
-        {
-            month: "Julio", revenue: 72000, expenses: 48000
-        },
-        {
-            month: "Agosto", revenue: 69000, expenses: 46000
-        },
-        {
-            month: "Septiembre", revenue: 78000, expenses: 52000
-        },
-        {
-            month: "Octubre", revenue: 74000, expenses: 50000
-        },
-        {
-            month: "Noviembre", revenue: 82000, expenses: 55000
-        },
-        {
-            month: "Diciembre", revenue: 89000, expenses: 58000
-        },
-    ]
-
-  return (
-// Corrección: Cambiar rounded-blur-2xl por rounded-2xl
-<div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-b-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
-
-        <div className="flex items-center justify-between mb-6">
-            <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                    Gráfico de ingresos
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Ingresos y Gastos Mensuales
-                </p>
-            </div>
-            <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                    <div className=" w-3 h-3 bg-linear-to-r from-emerald-400 to-emerald-600 rounded-full"></div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                            <span>Ingresos</span>
-                        </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <div className=" w-3 h-3 bg-linear-to-r from-red-600 to-red-800 rounded-full"></div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                            <span>Gastos</span>
-                        </div>
-                </div>
-            </div>
-        </div>
-
-        <div className="h-80">
-            {" "}
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{top: 20, right: 30, left: 20, bottom: 5 }}                
-                >
-                    <CartesianGrid 
-                        strokeDasharray="3 3"
-                        stroke="#e2e8f0"
-                        opacity={0.3}
-                    />
-                    
-                    <XAxis 
-                        dataKey="month"
-                        stroke="#64748b"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                    />
-
-                    <YAxis
-                        stroke="#64748b"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `$${value / 1000}k`}
-                    />
-
-                    <Tooltip 
-                        contentStyle={{
-                            backgroundColor: "rgba(255, 255, 255, 0.95)",
-                            border: "none",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                        }}
-                        formatter={(value) => [`$${value?.toLocaleString()}`, ""]}
-                    />
-                    <Bar 
-                        dataKey="revenue"
-                        fill="url(#revenuelinear)"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={40}
-                    />
-                    <Bar
-                        dataKey="expenses"
-                        fill="url(#expenseslinear)"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={40} 
-                    />
-                    <defs>
-                        <linearGradient id="revenuelinear" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#0bf173" />
-                            <stop offset="100%" stopColor="#053b2e"/>
-                        </linearGradient>
-                        <linearGradient id="expenseslinear" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#ff0000" />
-                            <stop offset="100%" stopColor="#580202"/>
-                        </linearGradient>
-                    </defs>
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-    </div>
-  )
+interface DailyRevenue {
+  dia: string;
+  ventas: number;
+  pedidos: number;
 }
 
-export default RevnueChart
+export function RevenueChart() {
+  const { locatarioId, role } = useAuth();
+  const [data, setData] = useState<DailyRevenue[]>([]);
+  const [totalSemana, setTotalSemana] = useState(0);
+
+  const fetchWeeklyRevenue = useCallback(async () => {
+    if (!locatarioId && role !== 'super_admin') return;
+    try {
+      let query = supabase
+        .from('pedidos')
+        .select('monto_total, estado, created_at')
+        .neq('estado', 'cancelado')
+        .neq('estado', 'pendiente_pago');
+
+      if (role !== 'super_admin' && locatarioId) {
+        query = query.eq('locatario_id', locatarioId);
+      }
+
+      const { data: pedidos, error } = await query;
+      if (!error && pedidos) {
+        const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const diasMap: { [key: string]: { ventas: number; pedidos: number } } = {};
+
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = diasSemana[d.getDay()];
+          diasMap[key] = { ventas: 0, pedidos: 0 };
+        }
+
+        let sumaTotal = 0;
+        pedidos.forEach((p) => {
+          const fechaPedido = new Date(p.created_at);
+          const diaNom = diasSemana[fechaPedido.getDay()];
+          if (diasMap[diaNom]) {
+            diasMap[diaNom].ventas += p.monto_total || 0;
+            diasMap[diaNom].pedidos += 1;
+          }
+          sumaTotal += p.monto_total || 0;
+        });
+
+        const chartData: DailyRevenue[] = Object.keys(diasMap).map((dia) => ({
+          dia,
+          ventas: diasMap[dia].ventas,
+          pedidos: diasMap[dia].pedidos,
+        }));
+
+        setData(chartData);
+        setTotalSemana(sumaTotal);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [locatarioId, role]);
+
+  useEffect(() => {
+    fetchWeeklyRevenue();
+
+    const channel = supabase.channel('chart-revenue-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
+        fetchWeeklyRevenue();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchWeeklyRevenue]);
+
+  return (
+    <div className="bg-white dark:bg-[#131318] rounded-2xl border border-zinc-200/90 dark:border-zinc-800 p-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-[#F5A623]" />
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+              Ingresos por Día
+            </h3>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            Rendimiento de ventas de la semana
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl">
+          <DollarSign className="w-4 h-4 text-[#F5A623]" />
+          <span className="text-xs font-bold font-mono text-zinc-900 dark:text-amber-400">
+            Total: ${totalSemana.toLocaleString('es-CL')}
+          </span>
+        </div>
+      </div>
+
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 10, right: 10, left: -5, bottom: 0 }}>
+            <defs>
+              <linearGradient id="solidBarGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F5A623" stopOpacity={1} />
+                <stop offset="100%" stopColor="#D97706" stopOpacity={0.8} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(120, 120, 120, 0.15)" />
+            <XAxis 
+              dataKey="dia" 
+              axisLine={{ stroke: "rgba(120, 120, 120, 0.2)" }} 
+              tickLine={false} 
+              tick={{ fill: "#52525b", fontSize: 12, fontWeight: 600 }} 
+            />
+            <YAxis
+              axisLine={{ stroke: "rgba(120, 120, 120, 0.2)" }}
+              tickLine={false}
+              tick={{ fill: "#52525b", fontSize: 11, fontFamily: "monospace", fontWeight: 600 }}
+              tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+            />
+            <Tooltip
+              cursor={{ fill: "rgba(120, 120, 120, 0.08)" }}
+              formatter={(value: any) => [`$${Number(value).toLocaleString('es-CL')}`, "Ventas"]}
+              contentStyle={{
+                backgroundColor: "#18181b",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "10px",
+                color: "#ffffff",
+                fontSize: "12px",
+                fontFamily: "monospace",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)"
+              }}
+            />
+            <Bar
+              dataKey="ventas"
+              fill="url(#solidBarGradient)"
+              radius={[6, 6, 0, 0]}
+              maxBarSize={44}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export default RevenueChart;
