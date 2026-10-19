@@ -125,7 +125,7 @@ export function CopilotoIABtn() {
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h3 className="text-base font-extrabold text-white tracking-tight">
-                      Copiloto Asesor Skip SJ
+                      Copiloto Asesor SKIP Duoc UC
                     </h3>
                     <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

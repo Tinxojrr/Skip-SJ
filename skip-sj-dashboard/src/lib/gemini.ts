@@ -52,7 +52,7 @@ export async function generarAnalisisLocal(metricas: MetricasNegocio): Promise<A
   try {
     const ai = new GoogleGenAI({ apiKey: currentKey });
     const prompt = `
-Eres el "Copiloto Asesor Skip SJ", consultor de gestión y analítica para locales de comida en Duoc UC Sede San Joaquín.
+Eres el "Copiloto Asesor SKIP Duoc UC", consultor de gestión y analítica para locales de comida en Duoc UC Sede San Joaquín.
 Analiza con rigor estas métricas en tiempo real del local "${metricas.nombreLocal}":
 
 DATOS REALES:
