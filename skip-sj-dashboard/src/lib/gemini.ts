@@ -1,10 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-
-// Inicializar el cliente oficial de Google Gemini
-export const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
 export interface MetricasNegocio {
   nombreLocal: string;
   totalVentas: number;
@@ -20,15 +15,18 @@ export interface MetricasNegocio {
 }
 
 export async function generarAnalisisLocal(metricas: MetricasNegocio): Promise<string> {
-  // Si no hay API key configurada, ofrecemos un análisis heurístico inteligente de respaldo
-  if (!ai || !apiKey) {
+  const currentKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+
+  // Si no hay API key configurada, usamos el motor heurístico local de respaldo
+  if (!currentKey) {
     return generarReporteFallback(metricas);
   }
 
   try {
+    const ai = new GoogleGenAI({ apiKey: currentKey });
     const prompt = `
 Eres el "Copiloto Asesor Skip SJ", un experto en gestión de restaurantes universitarios y analítica gastronómica para Duoc UC Sede San Joaquín.
-Analiza las siguientes métricas en vivo del local "${metricas.nombreLocal}" y entrega un reporte breve, accionable y ejecutivo (en formato Markdown):
+Analiza las siguientes métricas en vivo del local "${metricas.nombreLocal}" y entrega un reporte breve, accionable y ejecutivo (en formato Markdown en español chileno / formal):
 
 DATOS DEL LOCAL:
 - Local: ${metricas.nombreLocal}
@@ -51,7 +49,7 @@ Sé conciso, motivador y muy profesional con tono de consultor de negocio.
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
 

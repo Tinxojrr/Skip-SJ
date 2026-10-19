@@ -115,7 +115,7 @@ export function CopilotoIABtn() {
                   <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
                     Copiloto Asesor IA
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Gemini 2.5 Flash
+                      Gemini 3 Flash
                     </span>
                   </h3>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
