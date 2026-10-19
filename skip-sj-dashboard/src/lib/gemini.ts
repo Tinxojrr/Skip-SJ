@@ -14,10 +14,37 @@ export interface MetricasNegocio {
   horaActual: string;
 }
 
-export async function generarAnalisisLocal(metricas: MetricasNegocio): Promise<string> {
+export interface AnalisisEstructurado {
+  saludo: string;
+  horaCorte: string;
+  ritmoCocina: {
+    estado: string;
+    nivel: 'optimo' | 'moderado' | 'critico';
+    detalle: string;
+    puntoAtencion?: string;
+  };
+  cuelloBotella: {
+    riesgo: string;
+    nivel: 'bajo' | 'medio' | 'alto';
+    detalle: string;
+    accion: string;
+  };
+  estrategia: {
+    productoDestacado: string;
+    detalle: string;
+    preparacionProactiva: string;
+  };
+  oportunidadVenta: {
+    titulo: string;
+    propuestaCombo: string;
+    impactoTicket: string;
+  };
+  cierre: string;
+}
+
+export async function generarAnalisisLocal(metricas: MetricasNegocio): Promise<AnalisisEstructurado> {
   const currentKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-  // Si no hay API key configurada, usamos el motor heurístico local de respaldo
   if (!currentKey) {
     return generarReporteFallback(metricas);
   }
@@ -25,57 +52,107 @@ export async function generarAnalisisLocal(metricas: MetricasNegocio): Promise<s
   try {
     const ai = new GoogleGenAI({ apiKey: currentKey });
     const prompt = `
-Eres el "Copiloto Asesor Skip SJ", un experto en gestión de restaurantes universitarios y analítica gastronómica para Duoc UC Sede San Joaquín.
-Analiza las siguientes métricas en vivo del local "${metricas.nombreLocal}" y entrega un reporte breve, accionable y ejecutivo (en formato Markdown en español chileno / formal):
+Eres el "Copiloto Asesor Skip SJ", consultor de gestión y analítica para locales de comida en Duoc UC Sede San Joaquín.
+Analiza con rigor estas métricas en tiempo real del local "${metricas.nombreLocal}":
 
-DATOS DEL LOCAL:
+DATOS REALES:
 - Local: ${metricas.nombreLocal}
 - Ventas totales acumuladas: $${metricas.totalVentas.toLocaleString('es-CL')} CLP
-- Total pedidos procesados: ${metricas.pedidosTotales}
-- En cocina en este momento: ${metricas.pedidosPorEstado.en_preparacion}
-- Por preparar (cola): ${metricas.pedidosPorEstado.pagado}
-- Listos esperando retiro: ${metricas.pedidosPorEstado.listo_retiro}
-- Entregados con éxito: ${metricas.pedidosPorEstado.completado}
+- Pedidos totales: ${metricas.pedidosTotales}
+- En cocina ahora (en preparación): ${metricas.pedidosPorEstado.en_preparacion}
+- En cola por preparar: ${metricas.pedidosPorEstado.pagado}
+- Listos esperando retiro en mesón: ${metricas.pedidosPorEstado.listo_retiro}
+- Entregados exitosos: ${metricas.pedidosPorEstado.completado}
 - Productos más pedidos: ${metricas.productosMasVendidos.map(p => `${p.cantidad}x ${p.nombre}`).join(', ') || 'Sin productos registrados aún'}
-- Hora actual de operación: ${metricas.horaActual}
+- Hora actual de corte: ${metricas.horaActual}
 
-ESTRUCTURA DEL REPORTE:
-1. 📊 **Diagnóstico Operativo:** ¿Cómo está el ritmo de cocina y la carga de pedidos en comparación con el horario del casino?
-2. ⚡ **Alerta de Cuello de Botella:** Identifica si hay riesgo de colapso de pedidos por preparar o acumulación en mesón.
-3. 🎯 **Recomendación Estratégica Inmediata:** Sugiere qué cocinar o preparar antes del próximo bloque de clases o si conviene pausar algún producto con baja disponibilidad.
-4. 💡 **Oportunidad de Venta:** Idea de promoción o combo rápido para aumentar el ticket promedio.
-
-Sé conciso, motivador y muy profesional con tono de consultor de negocio.
+Devuelve un JSON estrictamente estructurado según este esquema:
+{
+  "saludo": "Estimados, reporte operativo para [nombreLocal] con corte a las [horaActual]. Breve contexto del momento del casino Duoc.",
+  "horaCorte": "${metricas.horaActual}",
+  "ritmoCocina": {
+    "estado": "Flujo Moderado-Alto" (o Óptimo o Crítico),
+    "nivel": "optimo" | "moderado" | "critico",
+    "detalle": "Diagnóstico detallado y conciso del ritmo de cocina versus pedidos recibidos.",
+    "puntoAtencion": "Detalle clave a vigilar (por ejemplo, demora en retiro de alumnos o velocidad de despacho)"
+  },
+  "cuelloBotella": {
+    "riesgo": "Riesgo de acumulación en mesón" (o Saturación de fuegos, o Ninguno),
+    "nivel": "bajo" | "medio" | "alto",
+    "detalle": "Explicación del riesgo potencial si no se toman medidas rápidas.",
+    "accion": "Acción inmediata y concreta recomendada para el personal de turno."
+  },
+  "estrategia": {
+    "productoDestacado": "Nombre del producto estrella más vendido",
+    "detalle": "Por qué este ítem lidera la demanda y qué representa en la carta.",
+    "preparacionProactiva": "Instrucción proactiva antes del próximo cambio de clases."
+  },
+  "oportunidadVenta": {
+    "titulo": "Sugerencia de Combo o Upselling",
+    "propuestaCombo": "Descripción clara de la oferta sugerida para el alumno (ej: Por $1.500 extra suma bebida o postre)",
+    "impactoTicket": "Estimación del nuevo ticket promedio proyectado"
+  },
+  "cierre": "Mensaje de motivación y enfoque operativo para el equipo del local."
+}
+No incluyas markdown adicional fuera del JSON.
 `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
     });
 
-    return response.text || "No se pudo generar el análisis en este momento.";
+    if (response.text) {
+      const parsed: AnalisisEstructurado = JSON.parse(response.text);
+      return parsed;
+    }
+
+    return generarReporteFallback(metricas);
   } catch (error) {
     console.error("Error al consultar Gemini:", error);
     return generarReporteFallback(metricas);
   }
 }
 
-function generarReporteFallback(m: MetricasNegocio): string {
+function generarReporteFallback(m: MetricasNegocio): AnalisisEstructurado {
   const cargaCocina = m.pedidosPorEstado.pagado + m.pedidosPorEstado.en_preparacion;
-  const nivelDemora = cargaCocina > 4 ? "Alto" : cargaCocina > 1 ? "Moderado" : "Óptimo";
+  const nivelDemora: 'optimo' | 'moderado' | 'critico' = cargaCocina > 4 ? 'critico' : cargaCocina > 1 ? 'moderado' : 'optimo';
+  const topProd = m.productosMasVendidos[0]?.nombre || 'Producto Principal';
 
-  return `### 📊 Diagnóstico Operativo: ${m.nombreLocal}
-El ritmo de cocina actualmente está en nivel **${nivelDemora}** (${cargaCocina} pedidos en cola activa). 
-Has acumulado **$${m.totalVentas.toLocaleString('es-CL')} CLP** en ${m.pedidosTotales} órdenes registradas.
-
-### ⚡ Alertas de Cocina
-${m.pedidosPorEstado.listo_retiro > 2 
-  ? `⚠️ Hay **${m.pedidosPorEstado.listo_retiro} pedidos listos** esperando retiro en el mesón. Notifica o valida códigos para descongestionar el mesón.` 
-  : `✅ El mesón de retiro se encuentra despejado (${m.pedidosPorEstado.listo_retiro} esperando).`}
-
-### 🎯 Recomendación para el Próximo Bloque
-- **Anticipación:** Los picos de mayor demanda estudiantil ocurren entre bloques de clases (12:30 a 14:00 hrs). Ten preparados los ingredientes base con 10 minutos de antelación.
-- **Top Ventas:** Tus productos estrella están respondiendo bien. Mantén revisada la pestaña de *Carta y Productos* para pausar a tiempo si algún insumo se agota.
-
-*(Tip: Agrega tu VITE_GEMINI_API_KEY en el archivo .env para habilitar el motor generativo neuronal en vivo).*`;
+  return {
+    saludo: `Reporte analítico para ${m.nombreLocal}. Supervisión de operaciones en tiempo real en Duoc UC San Joaquín.`,
+    horaCorte: m.horaActual,
+    ritmoCocina: {
+      estado: nivelDemora === 'optimo' ? 'Flujo Ágil' : nivelDemora === 'moderado' ? 'Flujo Regular' : 'Alta Demanda',
+      nivel: nivelDemora,
+      detalle: `La cocina opera con ${cargaCocina} pedidos en curso activo y $${m.totalVentas.toLocaleString('es-CL')} CLP acumulados en ${m.pedidosTotales} órdenes.`,
+      puntoAtencion: m.pedidosPorEstado.listo_retiro > 1
+        ? `${m.pedidosPorEstado.listo_retiro} pedidos listos esperan retiro en mesón. Conviene avisar a los alumnos.`
+        : 'Mesón de entrega operando con fluidez.'
+    },
+    cuelloBotella: {
+      riesgo: m.pedidosPorEstado.listo_retiro > 2 ? 'Congestión en Mesón de Retiro' : 'Demanda Equilibrada',
+      nivel: m.pedidosPorEstado.listo_retiro > 2 ? 'medio' : 'bajo',
+      detalle: m.pedidosPorEstado.listo_retiro > 2
+        ? 'Hay bandejas esperando retiro que pueden entorpecer la salida de nuevas órdenes.'
+        : 'No se observan trabas en la línea de producción en este instante.',
+      accion: m.pedidosPorEstado.listo_retiro > 2
+        ? 'Llamar por código de retiro a los alumnos pendientes para liberar espacio.'
+        : 'Mantener el mise-en-place listo para el siguiente bloque de clases.'
+    },
+    estrategia: {
+      productoDestacado: topProd,
+      detalle: `${topProd} es el producto de mayor rotación en la jornada actual.`,
+      preparacionProactiva: 'Tener porciones base pre-armadas 10 minutos antes del timbre de cambio de horario.'
+    },
+    oportunidadVenta: {
+      titulo: 'Combo Recreo Duoc',
+      propuestaCombo: 'Sugerir en caja agregar bebida o postre casero por $1.200 a compras sobre $3.500.',
+      impactoTicket: 'Aumento proyectado del ticket promedio a $4.800 CLP.'
+    },
+    cierre: '¡Gran trabajo del equipo! Mantener la velocidad de despacho en el mesón es la clave de la satisfacción estudiantil.'
+  };
 }
