@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="100%" height="100%" style="background-color: #0b0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Filtros de Sombra y Brillo -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <linearGradient id="grad-student" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="grad-platform" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="grad-kitchen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    
+    <!-- Marcadores de Flechas -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7"/>
+    </marker>
+  </defs>
+
+  <!-- Título Superior -->
+  <text x="500" y="38" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800" letter-spacing="1">
+    SKIP DUOC UC — FLUJO DE VALOR DE LA VISIÓN DE PRODUCTO
+  </text>
+  <text x="500" y="60" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="500">
+    Ecosistema Omnicanal en Tiempo Real: Estudiante ➔ Nube WebSocket &amp; IA ➔ Cocina de Casino
+  </text>
+
+  <!-- COLUMNA 1: ALUMNO (Izquierda) -->
+  <g transform="translate(30, 85)">
+    <rect width="280" height="360" rx="16" fill="#0f172a" stroke="#0284c7" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="280" height="42" rx="16" fill="#0284c7" opacity="0.2"/>
+    <text x="140" y="28" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="800" letter-spacing="0.5">
+      📱 ESTUDIANTE DUOC UC
+    </text>
+
+    <!-- Paso 1 -->
+    <rect x="20" y="60" width="240" height="54" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="35" y="84" fill="#38bdf8" font-size="16">1.</text>
+    <text x="60" y="84" fill="#f8fafc" font-size="12" font-weight="700">Explora Locales y Menú</text>
+    <text x="60" y="99" fill="#94a3b8" font-size="10">Achoclonados, Castaño, Paradiso</text>
+
+    <!-- Flecha interna 1-2 -->
+    <line x1="140" y1="114" x2="140" y2="134" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Paso 2 -->
+    <rect x="20" y="136" width="240" height="54" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="35" y="160" fill="#38bdf8" font-size="16">2.</text>
+    <text x="60" y="160" fill="#f8fafc" font-size="12" font-weight="700">Pide y Paga Anticipado</text>
+    <text x="60" y="175" fill="#94a3b8" font-size="10">Click &amp; Collect desde el celular</text>
+
+    <!-- Flecha interna 2-3 -->
+    <line x1="140" y1="190" x2="140" y2="210" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Paso 3 -->
+    <rect x="20" y="212" width="240" height="54" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="35" y="236" fill="#38bdf8" font-size="16">3.</text>
+    <text x="60" y="236" fill="#38bdf8" font-size="12" font-weight="800">Recibe Código: [ B3MR ]</text>
+    <text x="60" y="251" fill="#cbd5e1" font-size="10">Identificador único de 4 caracteres</text>
+
+    <!-- Flecha interna 3-4 -->
+    <line x1="140" y1="266" x2="140" y2="286" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Paso 4 -->
+    <rect x="20" y="288" width="240" height="54" rx="10" fill="#0284c7" fill-opacity="0.25" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="35" y="312" fill="#38bdf8" font-size="16">4.</text>
+    <text x="60" y="312" fill="#ffffff" font-size="12" font-weight="800">Retiro en Mesón sin Fila</text>
+    <text x="60" y="327" fill="#38bdf8" font-size="10">Ahorro del 70% del tiempo de recreo</text>
+  </g>
+
+  <!-- COLUMNA 2: PLATAFORMA / NUBE (Centro) -->
+  <g transform="translate(360, 85)">
+    <rect width="280" height="360" rx="16" fill="#0f172a" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="280" height="42" rx="16" fill="#8b5cf6" opacity="0.2"/>
+    <text x="140" y="28" text-anchor="middle" fill="#c084fc" font-size="14" font-weight="800" letter-spacing="0.5">
+      ⚡ PLATAFORMA SKIP DUOC
+    </text>
+
+    <!-- Componente Cloud 1: Supabase Realtime -->
+    <rect x="20" y="65" width="240" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+    <circle cx="45" cy="95" r="14" fill="#6366f1" fill-opacity="0.3"/>
+    <text x="45" y="100" text-anchor="middle" fill="#818cf8" font-size="14">⚡</text>
+    <text x="70" y="95" fill="#ffffff" font-size="13" font-weight="800">Supabase Realtime</text>
+    <text x="70" y="112" fill="#a5b4fc" font-size="10" font-weight="600">WebSockets Bidireccionales</text>
+    <text x="35" y="135" fill="#cbd5e1" font-size="10">• Sincronización en &lt; 200 ms</text>
+    <text x="35" y="152" fill="#cbd5e1" font-size="10">• Estados: Pagado ➔ Cocina ➔ Listo</text>
+    <text x="35" y="167" fill="#cbd5e1" font-size="10">• Seguridad RLS por local</text>
+
+    <!-- Componente Cloud 2: Copiloto IA Gemini -->
+    <rect x="20" y="210" width="240" height="130" rx="12" fill="#2e1065" stroke="#a855f7" stroke-width="1.5"/>
+    <circle cx="45" cy="240" r="14" fill="#a855f7" fill-opacity="0.3"/>
+    <text x="45" y="245" text-anchor="middle" fill="#c084fc" font-size="14">🧠</text>
+    <text x="70" y="240" fill="#ffffff" font-size="13" font-weight="800">Copiloto Asesor IA</text>
+    <text x="70" y="257" fill="#e9d5ff" font-size="10" font-weight="600">Google Gemini 3 Flash</text>
+    <text x="35" y="280" fill="#e2e8f0" font-size="10">• Alerta temprana de congestión</text>
+    <text x="35" y="297" fill="#e2e8f0" font-size="10">• Ritmo operativo de cocina</text>
+    <text x="35" y="314" fill="#e2e8f0" font-size="10">• Sugerencia de Combos Upselling</text>
+    <text x="35" y="331" fill="#e2e8f0" font-size="10">• Tarjetas Bento estructuradas</text>
+  </g>
+
+  <!-- COLUMNA 3: COCINA / CASINO (Derecha) -->
+  <g transform="translate(690, 85)">
+    <rect width="280" height="360" rx="16" fill="#0f172a" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="280" height="42" rx="16" fill="#d97706" opacity="0.2"/>
+    <text x="140" y="28" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="800" letter-spacing="0.5">
+      👨‍🍳 COCINA &amp; MESÓN CASINO
+    </text>
+
+    <!-- Paso Cocina 1 -->
+    <rect x="20" y="60" width="240" height="54" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="35" y="84" fill="#fbbf24" font-size="16">🔔</text>
+    <text x="60" y="84" fill="#f8fafc" font-size="12" font-weight="700">Chime Sonoro "Ding-Dong"</text>
+    <text x="60" y="99" fill="#94a3b8" font-size="10">Web Audio API al entrar pedido</text>
+
+    <!-- Flecha cocina 1-2 -->
+    <line x1="140" y1="114" x2="140" y2="134" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-amber)"/>
+
+    <!-- Paso Cocina 2 -->
+    <rect x="20" y="136" width="240" height="54" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="35" y="160" fill="#fbbf24" font-size="16">📋</text>
+    <text x="60" y="160" fill="#f8fafc" font-size="12" font-weight="700">Tablero Kanban Táctil</text>
+    <text x="60" y="175" fill="#94a3b8" font-size="10">Columnas interactivas de 1 toque</text>
+
+    <!-- Flecha cocina 2-3 -->
+    <line x1="140" y1="190" x2="140" y2="210" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-amber)"/>
+
+    <!-- Paso Cocina 3 -->
+    <rect x="20" y="212" width="240" height="54" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="35" y="236" fill="#fbbf24" font-size="16">🍳</text>
+    <text x="60" y="236" fill="#f8fafc" font-size="12" font-weight="700">Preparación Continua</text>
+    <text x="60" y="251" fill="#94a3b8" font-size="10">Cocina ordenada sin estrés de caja</text>
+
+    <!-- Flecha cocina 3-4 -->
+    <line x1="140" y1="266" x2="140" y2="286" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-amber)"/>
+
+    <!-- Paso Cocina 4 -->
+    <rect x="20" y="288" width="240" height="54" rx="10" fill="#d97706" fill-opacity="0.25" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="35" y="312" fill="#fbbf24" font-size="16">📦</text>
+    <text x="60" y="312" fill="#ffffff" font-size="12" font-weight="800">Despacho con Código B3MR</text>
+    <text x="60" y="327" fill="#fbbf24" font-size="10">Entrega rápida y sin confusiones</text>
+  </g>
+
+  <!-- LÍNEAS DE CONEXIÓN ENTRE COLUMNAS -->
+  <!-- Alumno Pide (Paso 2) -> Supabase -->
+  <path d="M 310 248 C 335 248, 340 180, 360 180" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow)"/>
+  
+  <!-- Supabase -> Cocina Chime (Paso 1) -->
+  <path d="M 640 180 C 665 180, 665 172, 690 172" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-purple)"/>
+
+  <!-- Cocina cambia a 'Listo' -> Supabase -> Alumno Notificación -->
+  <path d="M 690 398 C 665 398, 650 320, 640 320" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-amber)"/>
+  <path d="M 360 320 C 340 320, 335 400, 310 400" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow)"/>
+
+  <!-- Footer con badges -->
+  <rect x="30" y="452" width="940" height="22" rx="4" fill="#0f172a"/>
+  <text x="500" y="467" text-anchor="middle" fill="#64748b" font-size="10" font-weight="600">
+    ⚡ Supabase Realtime • 🧠 Gemini 3 Flash • 📱 React Native Expo • 💻 React 19 Tailwind • 🔒 PostgreSQL RLS
+  </text>
+</svg>
+

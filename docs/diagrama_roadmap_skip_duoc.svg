@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="100%" height="100%" style="background-color: #0b0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    
+    <!-- Marcadores de Flechas -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <!-- Encabezado -->
+  <text x="500" y="38" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800" letter-spacing="1">
+    SKIP DUOC UC — PRODUCT ROADMAP EVOLUTIVO
+  </text>
+  <text x="500" y="60" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="500">
+    Evolución planificada por fases de valor: Desde el MVP funcional hasta el escalamiento multi-sede
+  </text>
+
+  <!-- Línea de tiempo horizontal conectora -->
+  <line x1="120" y1="95" x2="880" y2="95" stroke="#334155" stroke-width="4" stroke-dasharray="8,8"/>
+
+  <!-- FASE 1: MVP -->
+  <g transform="translate(40, 115)">
+    <!-- Pin / Indicador -->
+    <circle cx="105" cy="-20" r="16" fill="#10b981" stroke="#059669" stroke-width="3" filter="url(#shadow)"/>
+    <text x="105" y="-15" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">v1.0</text>
+    
+    <!-- Tarjeta -->
+    <rect width="210" height="360" rx="14" fill="#0f172a" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="210" height="36" rx="14" fill="#10b981" opacity="0.2"/>
+    <text x="105" y="24" text-anchor="middle" fill="#34d399" font-size="12" font-weight="800">
+      FASE 1: MVP CORE
+    </text>
+    <text x="105" y="48" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="700">
+      [ ESTADO: COMPLETADO ]
+    </text>
+
+    <!-- Hitos -->
+    <g transform="translate(14, 62)">
+      <rect x="0" y="0" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="18" fill="#34d399" font-size="11" font-weight="700">✓ App Móvil Alumno</text>
+      <text x="10" y="34" fill="#94a3b8" font-size="9">Catálogo, carrito y checkout</text>
+
+      <rect x="0" y="56" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="74" fill="#34d399" font-size="11" font-weight="700">✓ Kanban en Cocina</text>
+      <text x="10" y="90" fill="#94a3b8" font-size="9">WebSockets con sonido chime</text>
+
+      <rect x="0" y="112" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="130" fill="#34d399" font-size="11" font-weight="700">✓ Código Retiro 4D</text>
+      <text x="10" y="146" fill="#94a3b8" font-size="9">Identificador corto (ej: B3MR)</text>
+
+      <rect x="0" y="168" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="186" fill="#34d399" font-size="11" font-weight="700">✓ Seguridad RLS</text>
+      <text x="10" y="202" fill="#94a3b8" font-size="9">PostgreSQL con roles de local</text>
+
+      <rect x="0" y="224" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="242" fill="#34d399" font-size="11" font-weight="700">✓ Modo Oscuro Obsidian</text>
+      <text x="10" y="258" fill="#94a3b8" font-size="9">Diseño serio y alto contraste</text>
+    </g>
+  </g>
+
+  <!-- FASE 2: IA & AUTOMATIZACIÓN -->
+  <g transform="translate(280, 115)">
+    <!-- Pin / Indicador -->
+    <circle cx="105" cy="-20" r="16" fill="#0284c7" stroke="#0369a1" stroke-width="3" filter="url(#shadow)"/>
+    <text x="105" y="-15" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">v1.1</text>
+
+    <!-- Tarjeta -->
+    <rect width="210" height="360" rx="14" fill="#0f172a" stroke="#0284c7" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="210" height="36" rx="14" fill="#0284c7" opacity="0.2"/>
+    <text x="105" y="24" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="800">
+      FASE 2: IA &amp; OPERACIÓN
+    </text>
+    <text x="105" y="48" text-anchor="middle" fill="#7dd3fc" font-size="10" font-weight="700">
+      [ ESTADO: EN CURSO ]
+    </text>
+
+    <!-- Hitos -->
+    <g transform="translate(14, 62)">
+      <rect x="0" y="0" width="182" height="48" rx="8" fill="#1e293b" stroke="#0284c7" stroke-width="1"/>
+      <text x="10" y="18" fill="#38bdf8" font-size="11" font-weight="700">⚡ Copiloto IA Bento</text>
+      <text x="10" y="34" fill="#cbd5e1" font-size="9">Gemini 3 Flash con métricas</text>
+
+      <rect x="0" y="56" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="74" fill="#38bdf8" font-size="11" font-weight="700">⏱ Tiempos Predictivos</text>
+      <text x="10" y="90" fill="#94a3b8" font-size="9">Semáforo vivo de cola (🟢🟡🔴)</text>
+
+      <rect x="0" y="112" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="130" fill="#38bdf8" font-size="11" font-weight="700">📷 Escáner Visión OCR</text>
+      <text x="10" y="146" fill="#94a3b8" font-size="9">Lectura de tarjetas y comprobantes</text>
+
+      <rect x="0" y="168" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="186" fill="#38bdf8" font-size="11" font-weight="700">📦 Control de Stock Vivo</text>
+      <text x="10" y="202" fill="#94a3b8" font-size="9">Pausar/activar platos al instante</text>
+
+      <rect x="0" y="224" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="242" fill="#38bdf8" font-size="11" font-weight="700">📊 Reportes por Turno</text>
+      <text x="10" y="258" fill="#94a3b8" font-size="9">Ticket promedio y horas peak</text>
+    </g>
+  </g>
+
+  <!-- FASE 3: FIDELIZACIÓN & HARDWARE -->
+  <g transform="translate(520, 115)">
+    <!-- Pin / Indicador -->
+    <circle cx="105" cy="-20" r="16" fill="#8b5cf6" stroke="#6d28d9" stroke-width="3" filter="url(#shadow)"/>
+    <text x="105" y="-15" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">v1.5</text>
+
+    <!-- Tarjeta -->
+    <rect width="210" height="360" rx="14" fill="#0f172a" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="210" height="36" rx="14" fill="#8b5cf6" opacity="0.2"/>
+    <text x="105" y="24" text-anchor="middle" fill="#c084fc" font-size="12" font-weight="800">
+      FASE 3: CAMPUS EXPERIENCE
+    </text>
+    <text x="105" y="48" text-anchor="middle" fill="#d8b4fe" font-size="10" font-weight="700">
+      [ PLANIFICADO ]
+    </text>
+
+    <!-- Hitos -->
+    <g transform="translate(14, 62)">
+      <rect x="0" y="0" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="18" fill="#c084fc" font-size="11" font-weight="700">📲 Push Notifications</text>
+      <text x="10" y="34" fill="#94a3b8" font-size="9">Aviso nativo: ¡Pedido B3MR listo!</text>
+
+      <rect x="0" y="56" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="74" fill="#c084fc" font-size="11" font-weight="700">🖥 Pantalla de Mesón</text>
+      <text x="10" y="90" fill="#94a3b8" font-size="9">Turnos estilo McDonald's en TV</text>
+
+      <rect x="0" y="112" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="130" fill="#c084fc" font-size="11" font-weight="700">🎟 Cuponera Duoc UC</text>
+      <text x="10" y="146" fill="#94a3b8" font-size="9">Descuentos y promos de recreo</text>
+
+      <rect x="0" y="168" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="186" fill="#c084fc" font-size="11" font-weight="700">⭐ Reseñas &amp; Rating</text>
+      <text x="10" y="202" fill="#94a3b8" font-size="9">Evaluación de comida y rapidez</text>
+
+      <rect x="0" y="224" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="242" fill="#c084fc" font-size="11" font-weight="700">💳 Billetera de Saldo</text>
+      <text x="10" y="258" fill="#94a3b8" font-size="9">Carga prepago de recreo</text>
+    </g>
+  </g>
+
+  <!-- FASE 4: MULTI-SEDE -->
+  <g transform="translate(755, 115)">
+    <!-- Pin / Indicador -->
+    <circle cx="105" cy="-20" r="16" fill="#f59e0b" stroke="#d97706" stroke-width="3" filter="url(#shadow)"/>
+    <text x="105" y="-15" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">v2.0</text>
+
+    <!-- Tarjeta -->
+    <rect width="210" height="360" rx="14" fill="#0f172a" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="210" height="36" rx="14" fill="#f59e0b" opacity="0.2"/>
+    <text x="105" y="24" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="800">
+      FASE 4: MULTI-SEDE
+    </text>
+    <text x="105" y="48" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="700">
+      [ VISIÓN INSTITUCIONAL ]
+    </text>
+
+    <!-- Hitos -->
+    <g transform="translate(14, 62)">
+      <rect x="0" y="0" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="18" fill="#fbbf24" font-size="11" font-weight="700">🏫 Expansión de Sedes</text>
+      <text x="10" y="34" fill="#94a3b8" font-size="9">Plaza Vespucio, Maipú, A. Varas</text>
+
+      <rect x="0" y="56" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="74" fill="#fbbf24" font-size="11" font-weight="700">📈 Dashboard Institucional</text>
+      <text x="10" y="90" fill="#94a3b8" font-size="9">Métricas para Casa Central Duoc</text>
+
+      <rect x="0" y="112" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="130" fill="#fbbf24" font-size="11" font-weight="700">🤖 Forecasting Predictivo</text>
+      <text x="10" y="146" fill="#94a3b8" font-size="9">Proyección de compras e insumos</text>
+
+      <rect x="0" y="168" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="186" fill="#fbbf24" font-size="11" font-weight="700">🔗 Integración Portal Duoc</text>
+      <text x="10" y="202" fill="#94a3b8" font-size="9">Single Sign-On (SSO Duoc)</text>
+
+      <rect x="0" y="224" width="182" height="48" rx="8" fill="#1e293b"/>
+      <text x="10" y="242" fill="#fbbf24" font-size="11" font-weight="700">🛡 Certificación ISO</text>
+      <text x="10" y="258" fill="#94a3b8" font-size="9">Auditoría y alta disponibilidad</text>
+    </g>
+  </g>
+
+  <!-- Footer con badges -->
+  <rect x="40" y="490" width="925" height="22" rx="4" fill="#0f172a"/>
+  <text x="500" y="505" text-anchor="middle" fill="#64748b" font-size="10" font-weight="600">
+    Enfoque Ágil e Incremental • Entregas de Valor Continuas • Duoc UC Sede San Joaquín 2026
+  </text>
+</svg>
+

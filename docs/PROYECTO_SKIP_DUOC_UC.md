@@ -72,3 +72,4 @@ Un ecosistema tecnológico integral que digitaliza y agiliza el flujo de compras
    * Interruptores en tiempo real para activar o pausar disponibilidad de productos cuando se agota un ingrediente en cocina.
 4. **Copiloto Asesor IA:**
    * Diagnóstico en tarjetas Bento: Ritmo de cocina, alerta de cuello de botella en mesón, producto de mayor rotación y sugerencias de combos de upselling con impacto monetario proyectado.
+
