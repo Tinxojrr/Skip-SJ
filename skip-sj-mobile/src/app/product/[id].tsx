@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Minus, Plus, ShoppingBag } from 'lucide-react-native';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Heart } from 'lucide-react-native';
+import { useFavoritesStore } from '../../store/favoritesStore';
+import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useCartStore } from '../../store/cartStore';
 
@@ -9,6 +11,15 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { addItem } = useCartStore();
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
+  const { isDarkMode } = useThemeStore();
+
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
+  const cardAlt = isDarkMode ? '#27272A' : '#F4F4F5';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.6)';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +73,7 @@ export default function ProductDetailScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: bg }}>
         <ActivityIndicator size="large" color="#F2A900" />
       </View>
     );
@@ -70,15 +81,17 @@ export default function ProductDetailScreen() {
 
   if (!product) return null;
 
+  const favorited = isFavorite(product.id);
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }} bounces={false} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 130 }} bounces={false} showsVerticalScrollIndicator={false}>
           {/* Header Image */}
-          <View style={{ width: '100%', height: 300, backgroundColor: 'rgba(17,17,17,0.05)', position: 'relative' }}>
+          <View style={{ width: '100%', height: 300, backgroundColor: isDarkMode ? '#18181B' : 'rgba(17,17,17,0.05)', position: 'relative' }}>
             {product.imagen_url ? (
               <Image source={{ uri: product.imagen_url }} style={{ width: '100%', height: '100%' }} />
             ) : (
@@ -97,23 +110,70 @@ export default function ProductDetailScreen() {
                 width: 44, 
                 height: 44, 
                 borderRadius: 22, 
-                backgroundColor: 'rgba(255,255,255,0.9)', 
+                backgroundColor: isDarkMode ? 'rgba(24,24,27,0.92)' : 'rgba(255,255,255,0.92)', 
                 justifyContent: 'center', 
                 alignItems: 'center',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 4
               }}
             >
-              <ArrowLeft color="#111111" size={24} />
+              <ArrowLeft color={textPrimary} size={22} />
+            </TouchableOpacity>
+
+            {/* Favorite Button Overlay */}
+            <TouchableOpacity 
+              onPress={() => {
+                toggleFavorite({
+                  id: product.id,
+                  name: product.nombre_producto,
+                  price: product.precio,
+                  storeName: product.locatarios?.nombre || 'Local',
+                  imageUrl: product.imagen_url,
+                  emoji: product.emoji
+                });
+              }}
+              style={{ 
+                position: 'absolute', 
+                top: 48, 
+                right: 24, 
+                width: 44, 
+                height: 44, 
+                borderRadius: 22, 
+                backgroundColor: isDarkMode ? 'rgba(24,24,27,0.92)' : 'rgba(255,255,255,0.92)', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 4
+              }}
+            >
+              <Heart 
+                color={favorited ? '#EF4444' : textSecondary} 
+                fill={favorited ? '#EF4444' : 'transparent'} 
+                size={22} 
+              />
             </TouchableOpacity>
           </View>
 
           {/* Details Section */}
-          <View style={{ padding: 24, backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -32, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 16 }}>
+          <View style={{ 
+            padding: 24, 
+            backgroundColor: cardBg, 
+            borderTopLeftRadius: 32, 
+            borderTopRightRadius: 32, 
+            marginTop: -32, 
+            shadowColor: '#000', 
+            shadowOffset: { width: 0, height: -4 }, 
+            shadowOpacity: isDarkMode ? 0.3 : 0.05, 
+            shadowRadius: 16 
+          }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View style={{ backgroundColor: 'rgba(242,169,0,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+              <View style={{ backgroundColor: isDarkMode ? 'rgba(242,169,0,0.18)' : 'rgba(242,169,0,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
                 <Text style={{ color: '#F2A900', fontFamily: 'Inter-SemiBold', fontSize: 12, textTransform: 'uppercase' }}>
                   {product.locatarios?.nombre}
                 </Text>
@@ -121,39 +181,43 @@ export default function ProductDetailScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <Text style={{ flex: 1, fontSize: 26, fontFamily: 'Inter-Bold', color: '#111111', lineHeight: 32 }}>{product.nombre_producto}</Text>
-              <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#003D7A', marginLeft: 16 }}>
+              <Text style={{ flex: 1, fontSize: 26, fontFamily: 'Inter-Bold', color: textPrimary, lineHeight: 32 }}>
+                {product.nombre_producto}
+              </Text>
+              <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : '#003D7A', marginLeft: 16 }}>
                 ${product.precio.toLocaleString('es-CL')}
               </Text>
             </View>
 
             {product.descripcion ? (
-              <Text style={{ fontSize: 15, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.6)', lineHeight: 24, marginBottom: 32 }}>
+              <Text style={{ fontSize: 15, fontFamily: 'Inter-Regular', color: textSecondary, lineHeight: 24, marginBottom: 32 }}>
                 {product.descripcion}
               </Text>
             ) : null}
 
             {/* Separator */}
-            <View style={{ height: 1, backgroundColor: 'rgba(17,17,17,0.05)', marginBottom: 24 }} />
+            <View style={{ height: 1, backgroundColor: borderColor, marginBottom: 24 }} />
 
             {/* Special Instructions */}
-            <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 12 }}>Instrucciones especiales</Text>
+            <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 12 }}>
+              Instrucciones especiales
+            </Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
               placeholder="Ej: Sin mayonesa, papas bien doradas..."
-              placeholderTextColor="rgba(17,17,17,0.3)"
+              placeholderTextColor={textSecondary}
               multiline
               numberOfLines={3}
               style={{
-                backgroundColor: 'rgba(17,17,17,0.02)',
+                backgroundColor: cardAlt,
                 borderWidth: 1,
-                borderColor: 'rgba(17,17,17,0.05)',
+                borderColor: borderColor,
                 borderRadius: 16,
                 padding: 16,
                 fontSize: 15,
                 fontFamily: 'Inter-Regular',
-                color: '#111111',
+                color: textPrimary,
                 height: 100,
                 textAlignVertical: 'top'
               }}
@@ -167,26 +231,26 @@ export default function ProductDetailScreen() {
           bottom: 0, 
           left: 0, 
           right: 0, 
-          backgroundColor: '#FFFFFF', 
+          backgroundColor: bg, 
           paddingHorizontal: 24, 
           paddingTop: 16, 
           paddingBottom: 32, 
           borderTopWidth: 1, 
-          borderTopColor: 'rgba(17,17,17,0.05)',
+          borderTopColor: borderColor,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
           {/* Quantity Controls */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 16, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: cardAlt, borderRadius: 16, overflow: 'hidden' }}>
             <TouchableOpacity 
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
               style={{ padding: 14 }}
             >
-              <Minus color="#111111" size={20} />
+              <Minus color={textPrimary} size={20} />
             </TouchableOpacity>
             
-            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 16, color: '#111111', minWidth: 24, textAlign: 'center' }}>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 16, color: textPrimary, minWidth: 24, textAlign: 'center' }}>
               {quantity}
             </Text>
             
@@ -194,7 +258,7 @@ export default function ProductDetailScreen() {
               onPress={() => setQuantity(quantity + 1)}
               style={{ padding: 14 }}
             >
-              <Plus color="#111111" size={20} />
+              <Plus color={textPrimary} size={20} />
             </TouchableOpacity>
           </View>
 
@@ -213,7 +277,8 @@ export default function ProductDetailScreen() {
               shadowColor: '#FFBF00',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
-              shadowRadius: 12
+              shadowRadius: 12,
+              elevation: 4
             }}
           >
             <ShoppingBag color="#111111" size={20} style={{ marginRight: 8 }} />
@@ -227,4 +292,3 @@ export default function ProductDetailScreen() {
     </View>
   );
 }
-

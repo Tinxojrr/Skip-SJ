@@ -10,7 +10,8 @@ import {
   ArrowRight, 
   RefreshCw, 
   PackageCheck,
-  Volume2
+  Volume2,
+  MessageSquare
 } from 'lucide-react';
 
 type EstadoPedido = 'pendiente_pago' | 'pagado' | 'en_preparacion' | 'listo_retiro' | 'completado';
@@ -20,6 +21,7 @@ interface PedidoItem {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  notas?: string | null;
   productos: {
     nombre_producto: string;
   } | null;
@@ -83,6 +85,7 @@ export const KanbanBoard = () => {
             cantidad,
             precio_unitario,
             subtotal,
+            notas,
             productos (
               nombre_producto
             )
@@ -95,7 +98,46 @@ export const KanbanBoard = () => {
         query = query.eq('locatario_id', locatarioId);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      // Fallback si la columna 'notas' aún no se ha ejecutado en Supabase SQL editor
+      if (error && error.message?.includes('notas')) {
+        let fallbackQuery = supabase
+          .from('pedidos')
+          .select(`
+            id,
+            estado,
+            hora_retiro_estimada,
+            monto_total,
+            codigo_retiro,
+            created_at,
+            usuarios (
+              p_nombre,
+              apellido_p,
+              apodo,
+              email
+            ),
+            pedido_items (
+              id,
+              cantidad,
+              precio_unitario,
+              subtotal,
+              productos (
+                nombre_producto
+              )
+            )
+          `)
+          .in('estado', ['pagado', 'en_preparacion', 'listo_retiro'])
+          .order('created_at', { ascending: false });
+
+        if (role !== 'super_admin' && locatarioId) {
+          fallbackQuery = fallbackQuery.eq('locatario_id', locatarioId);
+        }
+        const fallbackRes = await fallbackQuery;
+        data = fallbackRes.data as any;
+        error = fallbackRes.error;
+      }
+
       if (!error && data) {
         setPedidos(data as any as Pedido[]);
       } else if (error) {
@@ -450,13 +492,21 @@ function PedidoCard({
         {items.length > 0 ? (
           <ul className="space-y-1 text-xs text-zinc-700 dark:text-zinc-300">
             {items.map((item, idx) => (
-              <li key={item.id || idx} className="flex justify-between items-start gap-2">
-                <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                  {item.cantidad}x {item.productos?.nombre_producto || 'Producto'}
-                </span>
-                <span className="text-zinc-400 font-mono text-[11px]">
-                  {formatearPrecio(item.subtotal || item.precio_unitario * item.cantidad)}
-                </span>
+              <li key={item.id || idx} className="space-y-1">
+                <div className="flex justify-between items-start gap-2">
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                    {item.cantidad}x {item.productos?.nombre_producto || 'Producto'}
+                  </span>
+                  <span className="text-zinc-400 font-mono text-[11px]">
+                    {formatearPrecio(item.subtotal || item.precio_unitario * item.cantidad)}
+                  </span>
+                </div>
+                {item.notas && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 w-fit">
+                    <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                    <span className="font-medium italic">Nota: {item.notas}</span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

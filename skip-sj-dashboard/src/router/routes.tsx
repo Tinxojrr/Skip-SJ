@@ -7,7 +7,7 @@ import { HistorialPedidosPage } from '../features/pedidos/HistorialPedidosPage';
 import { SignInPage } from '../features/auth/SignInPage';
 import { SignUpPage } from '../features/auth/SignUpPage';
 import { useAuth } from '../context/AuthContext';
-import { ProtectedRoute } from './ProtectedRoute';
+
 
 export const AppRoutes = () => {
   const { role } = useAuth();

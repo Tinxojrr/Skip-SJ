@@ -1,22 +1,43 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
-import { CreditCard, History, Heart, Bell, Shield, HelpCircle, LogOut, ChevronRight, Wallet } from 'lucide-react-native';
+import { 
+  CreditCard, 
+  History, 
+  Heart, 
+  Bell, 
+  Shield, 
+  HelpCircle, 
+  LogOut, 
+  ChevronRight, 
+  Wallet,
+  Moon
+} from 'lucide-react-native';
 
 const MENU_ITEMS = [
-  { id: 'history', title: 'Historial de Pedidos', icon: History, color: '#111111' },
-  { id: 'favorites', title: 'Mis Favoritos', icon: Heart, color: '#111111' },
-  { id: 'notifications', title: 'Notificaciones', icon: Bell, color: '#111111' },
-  { id: 'security', title: 'Seguridad', icon: Shield, color: '#111111' },
-  { id: 'help', title: 'Soporte y Ayuda', icon: HelpCircle, color: '#111111' },
+  { id: 'history', title: 'Historial de Pedidos', icon: History },
+  { id: 'favorites', title: 'Mis Favoritos', icon: Heart },
+  { id: 'notifications', title: 'Notificaciones', icon: Bell },
+  { id: 'security', title: 'Seguridad', icon: Shield },
+  { id: 'help', title: 'Soporte y Ayuda', icon: HelpCircle },
 ];
 
 export default function ProfileScreen() {
   const { session, profile, setSession } = useAuthStore();
+  const { isDarkMode, toggleDarkMode } = useThemeStore();
   const router = useRouter();
+
+  // Variables de tema dinámico
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.5)';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
+  const iconColor = isDarkMode ? '#E4E4E7' : '#111111';
 
   // Extraer iniciales y nombre del usuario
   const email = session?.user?.email || '';
@@ -56,12 +77,30 @@ export default function ProfileScreen() {
     );
   };
 
-  const handlePressSimulate = (title: string) => {
-    Alert.alert("Próximamente", `La sección de ${title} estará disponible pronto.`);
+  const handlePressJunaeb = () => {
+    Alert.alert(
+      "Tarjeta Junaeb BAES",
+      `Estado: Activa y vinculada\nBeneficiario: ${displayName}\nConvenio: Sede San Joaquín\n\nPuedes utilizar tu saldo BAES para pagar de forma presencial o validar tu compra en los tótems y cajas de la sede.`,
+      [
+        { text: "Administrar", onPress: () => router.push('/add-payment') },
+        { text: "Cerrar", style: "cancel" }
+      ]
+    );
+  };
+
+  const handlePressBank = () => {
+    Alert.alert(
+      "BancoEstado (CuentaRUT)",
+      `Estado: Vinculado vía Open Banking\nTitular: ${displayName}\n\nPermite transferencias inmediatas de pago sin costo adicional en el casino.`,
+      [
+        { text: "Administrar Métodos", onPress: () => router.push('/add-payment') },
+        { text: "Cerrar", style: "cancel" }
+      ]
+    );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         
         {/* Header (Avatar & Info) */}
@@ -74,8 +113,8 @@ export default function ProfileScreen() {
                 height: 100, 
                 borderRadius: 50,
                 marginBottom: 16,
-                borderWidth: 1,
-                borderColor: 'rgba(17,17,17,0.1)'
+                borderWidth: 2,
+                borderColor: isDarkMode ? '#F2A900' : 'rgba(17,17,17,0.1)'
               }}
             />
           ) : (
@@ -83,11 +122,13 @@ export default function ProfileScreen() {
               width: 100, 
               height: 100, 
               borderRadius: 50, 
-              backgroundColor: '#111111', 
+              backgroundColor: isDarkMode ? '#1E1E24' : '#111111', 
               justifyContent: 'center', 
               alignItems: 'center',
               marginBottom: 16,
-              shadowColor: '#111111',
+              borderWidth: isDarkMode ? 1 : 0,
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent',
+              shadowColor: '#000',
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.15,
               shadowRadius: 16,
@@ -96,41 +137,59 @@ export default function ProfileScreen() {
               <Text style={{ color: '#F2A900', fontSize: 36, fontFamily: 'Inter-Bold' }}>{initials || 'DU'}</Text>
             </View>
           )}
-          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 4 }}>{displayName}</Text>
+          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 4 }}>
+            {displayName}
+          </Text>
           {profile?.apodo && (
-            <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.4)', marginBottom: 2 }}>{fullName}</Text>
+            <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, marginBottom: 2 }}>
+              {fullName}
+            </Text>
           )}
-          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)' }}>{email}</Text>
+          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: textSecondary }}>
+            {email}
+          </Text>
           
           <TouchableOpacity 
             onPress={() => router.push('/edit-profile')}
-            style={{ marginTop: 16, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(17,17,17,0.05)', borderRadius: 20 }}
+            style={{ 
+              marginTop: 16, 
+              paddingHorizontal: 20, 
+              paddingVertical: 8, 
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)', 
+              borderRadius: 20 
+            }}
           >
-            <Text style={{ color: '#111111', fontFamily: 'Inter-SemiBold', fontSize: 13 }}>Editar perfil</Text>
+            <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 13 }}>
+              Editar perfil
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Payment Methods Section */}
+        {/* Métodos de Pago Section */}
         <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
-            <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111' }}>Métodos de Pago</Text>
+            <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary }}>
+              Métodos de Pago
+            </Text>
             <TouchableOpacity onPress={() => router.push('/add-payment')}>
-              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#F2A900' }}>+ Agregar</Text>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#F2A900' }}>
+                + Agregar
+              </Text>
             </TouchableOpacity>
           </View>
 
           <View style={{ gap: 12 }}>
             {/* Junaeb BAES Card */}
             <TouchableOpacity 
-              onPress={() => handlePressSimulate('Configurar Junaeb')}
+              onPress={handlePressJunaeb}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: cardBg,
                 padding: 16,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: 'rgba(0,166,80,0.3)', // Color verde sutil de Junaeb
+                borderColor: isDarkMode ? 'rgba(0,166,80,0.4)' : 'rgba(0,166,80,0.3)',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.03,
@@ -138,27 +197,31 @@ export default function ProfileScreen() {
                 elevation: 1
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(0,166,80,0.1)', justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(0,166,80,0.12)', justifyContent: 'center', alignItems: 'center' }}>
                 <Wallet color="#00A650" size={20} />
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={{ color: '#111111', fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>Tarjeta Junaeb BAES</Text>
-                <Text style={{ color: 'rgba(17,17,17,0.5)', fontFamily: 'Inter-Regular', fontSize: 12 }}>Saldo disponible: $42.500</Text>
+                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
+                  Tarjeta Junaeb BAES
+                </Text>
+                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
+                  Saldo disponible: $42.500
+                </Text>
               </View>
-              <ChevronRight color="rgba(17,17,17,0.3)" size={20} />
+              <ChevronRight color={textSecondary} size={20} />
             </TouchableOpacity>
 
-            {/* Credit Card */}
+            {/* Banco Directo */}
             <TouchableOpacity 
-              onPress={() => handlePressSimulate('Configurar Tarjeta')}
+              onPress={handlePressBank}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: cardBg,
                 padding: 16,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: 'rgba(17,17,17,0.05)',
+                borderColor: borderColor,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.03,
@@ -166,23 +229,65 @@ export default function ProfileScreen() {
                 elevation: 1
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(17,17,17,0.05)', justifyContent: 'center', alignItems: 'center' }}>
-                <CreditCard color="#111111" size={20} />
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isDarkMode ? 'rgba(0,61,122,0.2)' : 'rgba(17,17,17,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                <CreditCard color={iconColor} size={20} />
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={{ color: '#111111', fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>Visa Débito</Text>
-                <Text style={{ color: 'rgba(17,17,17,0.5)', fontFamily: 'Inter-Regular', fontSize: 12 }}>Terminada en 4242</Text>
+                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
+                  BancoEstado (CuentaRUT)
+                </Text>
+                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
+                  Open Banking directo vinculado
+                </Text>
               </View>
-              <ChevronRight color="rgba(17,17,17,0.3)" size={20} />
+              <ChevronRight color={textSecondary} size={20} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* General Menu Settings */}
+        {/* General Menu Settings: MI CUENTA */}
         <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
-          <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 16 }}>Mi Cuenta</Text>
+          <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 16 }}>
+            Mi Cuenta
+          </Text>
           
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor: 'rgba(17,17,17,0.05)' }}>
+          <View style={{ backgroundColor: cardBg, borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor }}>
+            
+            {/* TOGGLE MODO OSCURO */}
+            <View style={{ 
+              flexDirection: 'row', 
+              alignItems: 'center', 
+              paddingVertical: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: borderColor
+            }}>
+              <View style={{ 
+                width: 36, 
+                height: 36, 
+                borderRadius: 10, 
+                backgroundColor: isDarkMode ? 'rgba(242,169,0,0.15)' : 'rgba(17,17,17,0.05)', 
+                justifyContent: 'center', 
+                alignItems: 'center' 
+              }}>
+                <Moon color={isDarkMode ? '#F2A900' : '#111111'} size={20} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15 }}>
+                  Modo Oscuro
+                </Text>
+                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 11, marginTop: 1 }}>
+                  {isDarkMode ? 'Tema Obsidian nocturno' : 'Tema claro estándar'}
+                </Text>
+              </View>
+              <Switch 
+                value={isDarkMode} 
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: '#E4E4E7', true: '#003D7A' }}
+                thumbColor={isDarkMode ? '#F2A900' : '#FFFFFF'}
+              />
+            </View>
+
+            {/* LISTA DE OPCIONES DE CUENTA */}
             {MENU_ITEMS.map((item, index) => {
               const Icon = item.icon;
               const isLast = index === MENU_ITEMS.length - 1;
@@ -200,8 +305,6 @@ export default function ProfileScreen() {
                       router.push('/security');
                     } else if (item.id === 'help') {
                       router.push('/support');
-                    } else {
-                      handlePressSimulate(item.title);
                     }
                   }}
                   style={{ 
@@ -209,14 +312,16 @@ export default function ProfileScreen() {
                     alignItems: 'center', 
                     paddingVertical: 16,
                     borderBottomWidth: isLast ? 0 : 1,
-                    borderBottomColor: 'rgba(17,17,17,0.05)'
+                    borderBottomColor: borderColor
                   }}
                 >
-                  <Icon color={item.color} size={22} />
-                  <Text style={{ flex: 1, marginLeft: 16, color: '#111111', fontFamily: 'Inter-SemiBold', fontSize: 15 }}>{item.title}</Text>
-                  <ChevronRight color="rgba(17,17,17,0.2)" size={20} />
+                  <Icon color={iconColor} size={22} />
+                  <Text style={{ flex: 1, marginLeft: 16, color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15 }}>
+                    {item.title}
+                  </Text>
+                  <ChevronRight color={textSecondary} size={20} />
                 </TouchableOpacity>
-              )
+              );
             })}
           </View>
         </View>
@@ -235,7 +340,9 @@ export default function ProfileScreen() {
             }}
           >
             <LogOut color="#EF4444" size={20} />
-            <Text style={{ marginLeft: 8, color: '#EF4444', fontFamily: 'Inter-Bold', fontSize: 15 }}>Cerrar Sesión</Text>
+            <Text style={{ marginLeft: 8, color: '#EF4444', fontFamily: 'Inter-Bold', fontSize: 15 }}>
+              Cerrar Sesión
+            </Text>
           </TouchableOpacity>
         </View>
 

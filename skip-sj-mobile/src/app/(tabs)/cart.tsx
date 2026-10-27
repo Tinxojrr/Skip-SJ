@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
 import { 
@@ -103,6 +104,12 @@ const BANCOS_CHILE: Banco[] = [
 ];
 
 export default function CartScreen() {
+  const { isDarkMode } = useThemeStore();
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.5)';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { session, profile } = useAuthStore();
   const router = useRouter();
@@ -139,7 +146,7 @@ export default function CartScreen() {
     setModalStep('procesando');
 
     try {
-      // 1. Simulación breve de handshake bancario Open Banking (1.3 seg)
+      // 1. Handshake bancario Open Banking (1.3 seg)
       await new Promise(resolve => setTimeout(resolve, 1300));
 
       const codigoRetiro = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -155,16 +162,31 @@ export default function CartScreen() {
 
       if (pedidoError) throw pedidoError;
 
-      // 3. Insertar Items del Pedido
-      const { error: itemsError } = await (supabase.from('pedido_items') as any).insert(
-        items.map(item => ({
+      // 3. Insertar Items del Pedido (incluyendo notas personalizadas si existen)
+      const itemsPayload = items.map(item => ({
+        pedido_id: pedido.id,
+        producto_id: item.id,
+        cantidad: item.quantity,
+        precio_unitario: item.price,
+        subtotal: item.price * item.quantity,
+        notas: item.notes || null
+      }));
+
+      let { error: itemsError } = await (supabase.from('pedido_items') as any).insert(itemsPayload);
+
+      // Si la base de datos aún no tiene la columna 'notas', reintentamos sin ella para no romper la compra
+      if (itemsError && (itemsError.message?.includes('notas') || itemsError.message?.includes('column'))) {
+        console.warn('Columna notas aún no presente en pedido_items, guardando items estándar...');
+        const fallbackPayload = items.map(item => ({
           pedido_id: pedido.id,
           producto_id: item.id,
           cantidad: item.quantity,
           precio_unitario: item.price,
           subtotal: item.price * item.quantity
-        }))
-      );
+        }));
+        const retry = await (supabase.from('pedido_items') as any).insert(fallbackPayload);
+        itemsError = retry.error;
+      }
 
       if (itemsError) throw itemsError;
 
@@ -185,21 +207,23 @@ export default function CartScreen() {
   // Finalizar e ir al historial
   const irAlHistorial = () => {
     setModalVisible(false);
+    setModalStep('confirmar');
+    setCodigoRetiroGenerado('');
     router.push('/history');
   };
 
   // ESTADO VACÍO
-  if (items.length === 0 && modalStep !== 'exito') {
+  if (items.length === 0 && (!modalVisible || modalStep !== 'exito')) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
           <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,61,122,0.05)', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
             <ShoppingCart color="#003D7A" size={48} opacity={0.5} />
           </View>
-          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 8, textAlign: 'center' }}>
+          <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 8, textAlign: 'center' }}>
             Tu carrito está vacío
           </Text>
-          <Text style={{ fontSize: 16, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)', textAlign: 'center', marginBottom: 32 }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Inter-Regular', color: textSecondary, textAlign: 'center', marginBottom: 32 }}>
             ¡Es hora de un break! Explora los locales y pide algo rico.
           </Text>
           
@@ -215,11 +239,11 @@ export default function CartScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       
       {/* Header Fijo */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(17,17,17,0.05)', backgroundColor: '#FAFAFA' }}>
-        <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: '#111111' }}>Mi Pedido</Text>
+      <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: borderColor, backgroundColor: bg }}>
+        <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: textPrimary }}>Mi Pedido</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
@@ -230,27 +254,27 @@ export default function CartScreen() {
             <Animated.View 
               entering={FadeInDown.delay(index * 100).springify()}
               key={item.id} 
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 }}
+              style={{ backgroundColor: cardBg, borderRadius: 20, padding: 16, borderWidth: 1, borderColor, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 12 }}>
                   {item.storeName && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                      <Store color="rgba(17,17,17,0.4)" size={12} style={{ marginRight: 4 }} />
-                      <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: 'rgba(17,17,17,0.5)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      <Store color={textSecondary} size={12} style={{ marginRight: 4 }} />
+                      <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                         {item.storeName}
                       </Text>
                     </View>
                   )}
-                  <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: '#111111', marginBottom: 2 }}>{item.name}</Text>
+                  <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: textPrimary, marginBottom: 2 }}>{item.name}</Text>
                   {item.notes ? (
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)', marginBottom: 6, fontStyle: 'italic' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: textSecondary, marginBottom: 6, fontStyle: 'italic' }}>
                       Nota: {item.notes}
                     </Text>
                   ) : (
                     <View style={{ marginBottom: 4 }} />
                   )}
-                  <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: '#003D7A' }}>${item.price.toLocaleString('es-CL')}</Text>
+                  <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : '#003D7A' }}>${item.price.toLocaleString('es-CL')}</Text>
                 </View>
                 
                 {/* Botón Eliminar */}
@@ -261,15 +285,15 @@ export default function CartScreen() {
 
               {/* Controles de cantidad */}
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, overflow: 'hidden' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#27272A' : '#F3F4F6', borderRadius: 12, overflow: 'hidden' }}>
                   <TouchableOpacity 
                     onPress={() => item.quantity > 1 ? updateQuantity(item.id, 'decrease') : removeItem(item.id)}
                     style={{ padding: 10, paddingHorizontal: 14 }}
                   >
-                    <Minus color="#111111" size={16} />
+                    <Minus color={textPrimary} size={16} />
                   </TouchableOpacity>
                   
-                  <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: '#111111', minWidth: 20, textAlign: 'center' }}>
+                  <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: textPrimary, minWidth: 20, textAlign: 'center' }}>
                     {item.quantity}
                   </Text>
                   
@@ -277,7 +301,7 @@ export default function CartScreen() {
                     onPress={() => updateQuantity(item.id, 'increase')}
                     style={{ padding: 10, paddingHorizontal: 14 }}
                   >
-                    <Plus color="#111111" size={16} />
+                    <Plus color={textPrimary} size={16} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -288,26 +312,26 @@ export default function CartScreen() {
         {/* Resumen */}
         <Animated.View entering={FadeIn.delay(300)}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-            <Receipt color="#111111" size={20} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111' }}>Resumen</Text>
+            <Receipt color={textPrimary} size={20} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary }}>Resumen</Text>
           </View>
           
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 }}>
+          <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, borderWidth: 1, borderColor, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.6)' }}>Subtotal</Text>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: '#111111' }}>${subtotal.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: textSecondary }}>Subtotal</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${subtotal.toLocaleString('es-CL')}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.6)' }}>Cargo por servicio</Text>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: '#111111' }}>${serviceFee.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: textSecondary }}>Cargo por servicio</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${serviceFee.toLocaleString('es-CL')}</Text>
             </View>
             
             {/* Divider */}
-            <View style={{ height: 1, backgroundColor: 'rgba(17,17,17,0.05)', marginBottom: 16 }} />
+            <View style={{ height: 1, backgroundColor: borderColor, marginBottom: 16 }} />
             
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: '#111111' }}>Total a pagar</Text>
-              <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#003D7A' }}>${total.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a pagar</Text>
+              <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : '#003D7A' }}>${total.toLocaleString('es-CL')}</Text>
             </View>
           </View>
         </Animated.View>
@@ -316,25 +340,25 @@ export default function CartScreen() {
         <Animated.View entering={FadeIn.delay(400)} style={{ marginTop: 24, marginBottom: 120 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Building2 color="#111111" size={20} style={{ marginRight: 8 }} />
-              <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111' }}>Método de Pago</Text>
+              <Building2 color={textPrimary} size={20} style={{ marginRight: 8 }} />
+              <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary }}>Método de Pago</Text>
             </View>
             <TouchableOpacity onPress={cambiarBanco}>
-              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#004B93' }}>Cambiar banco</Text>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#F2A900' : '#004B93' }}>Cambiar banco</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity 
             onPress={abrirPasarela}
             style={{ 
-              backgroundColor: '#FFFFFF', 
+              backgroundColor: cardBg, 
               borderRadius: 20, 
               padding: 16, 
               flexDirection: 'row', 
               alignItems: 'center', 
               shadowColor: '#000', 
               shadowOffset: { width: 0, height: 4 }, 
-              shadowOpacity: 0.04, 
+              shadowOpacity: isDarkMode ? 0.2 : 0.04, 
               shadowRadius: 10, 
               elevation: 2, 
               borderWidth: 1.5, 
@@ -358,23 +382,23 @@ export default function CartScreen() {
 
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: '#111111' }}>
+                <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: textPrimary }}>
                   {bancoSeleccionado.nombre}
                 </Text>
                 {bancoSeleccionado.badge && (
-                  <View style={{ backgroundColor: '#E0F2FE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 9, fontFamily: 'Inter-Bold', color: '#0369A1' }}>
+                  <View style={{ backgroundColor: isDarkMode ? '#1E3A8A' : '#E0F2FE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                    <Text style={{ fontSize: 9, fontFamily: 'Inter-Bold', color: isDarkMode ? '#93C5FD' : '#0369A1' }}>
                       {bancoSeleccionado.badge}
                     </Text>
                   </View>
                 )}
               </View>
-              <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)', marginTop: 2 }}>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, marginTop: 2 }}>
                 {bancoSeleccionado.tipoCuenta} • RUT {profile?.rut || '20.481.923-K'}
               </Text>
             </View>
 
-            <ChevronRight color="rgba(17,17,17,0.3)" size={20} />
+            <ChevronRight color={textSecondary} size={20} />
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 6 }}>
@@ -387,32 +411,32 @@ export default function CartScreen() {
       </ScrollView>
 
       {/* CTA Pagar Sticky */}
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FAFAFA', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: 'rgba(17,17,17,0.05)' }}>
+      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: bg, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: borderColor }}>
         <TouchableOpacity 
           onPress={abrirPasarela}
-          disabled={isCheckingOut}
+          disabled={isCheckingOut || items.length === 0}
           style={{ 
-            backgroundColor: bancoSeleccionado.colorBg, 
+            backgroundColor: items.length === 0 ? '#94A3B8' : bancoSeleccionado.colorBg, 
             borderRadius: 16, 
             paddingVertical: 18, 
             flexDirection: 'row', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            paddingHorizontal: 24,
+            paddingHorizontal: 20,
             shadowColor: bancoSeleccionado.colorBg,
             shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.35,
+            shadowOpacity: items.length === 0 ? 0 : 0.35,
             shadowRadius: 12,
-            elevation: 6
+            elevation: items.length === 0 ? 0 : 6
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 12 }}>
             <Building2 size={18} color="#FFFFFF" />
-            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 16 }}>
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 15 }} numberOfLines={1}>
               Pagar con {bancoSeleccionado.nombre}
             </Text>
           </View>
-          <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 18 }}>
+          <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 17, marginLeft: 4 }}>
             ${total.toLocaleString('es-CL')}
           </Text>
         </TouchableOpacity>
@@ -426,12 +450,15 @@ export default function CartScreen() {
         animationType="slide"
         transparent={true}
         onRequestClose={() => {
-          if (modalStep !== 'procesando') setModalVisible(false);
+          if (modalStep !== 'procesando') {
+            setModalVisible(false);
+            if (modalStep === 'exito') setModalStep('confirmar');
+          }
         }}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
           <View style={{ 
-            backgroundColor: '#FFFFFF', 
+            backgroundColor: cardBg, 
             borderTopLeftRadius: 28, 
             borderTopRightRadius: 28, 
             paddingHorizontal: 24, 
@@ -444,14 +471,14 @@ export default function CartScreen() {
             {modalStep === 'seleccionar_banco' && (
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#111111' }}>
+                  <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: textPrimary }}>
                     Selecciona tu Banco
                   </Text>
                   <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
-                    <X size={20} color="#666" />
+                    <X size={20} color={textSecondary} />
                   </TouchableOpacity>
                 </View>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)', marginBottom: 20 }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, marginBottom: 20 }}>
                   Conexión directa vía Open Banking Duoc UC sin comisiones
                 </Text>
 
@@ -471,9 +498,9 @@ export default function CartScreen() {
                             alignItems: 'center',
                             padding: 14,
                             borderRadius: 16,
-                            backgroundColor: isSelected ? '#F0F9FF' : '#F9FAFB',
+                            backgroundColor: isSelected ? (isDarkMode ? '#1E293B' : '#F0F9FF') : (isDarkMode ? '#27272A' : '#F9FAFB'),
                             borderWidth: 1.5,
-                            borderColor: isSelected ? banco.colorBg : '#E5E7EB'
+                            borderColor: isSelected ? banco.colorBg : borderColor
                           }}
                         >
                           <View style={{ 
@@ -492,23 +519,23 @@ export default function CartScreen() {
 
                           <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#111111' }}>
+                              <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>
                                 {banco.nombre}
                               </Text>
                               {banco.badge && (
-                                <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Bold', color: '#1E40AF' }}>
+                                <View style={{ backgroundColor: isDarkMode ? '#1E3A8A' : '#DBEAFE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Bold', color: isDarkMode ? '#93C5FD' : '#1E40AF' }}>
                                     {banco.badge}
                                   </Text>
                                 </View>
                               )}
                             </View>
-                            <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: 'rgba(17,17,17,0.5)' }}>
+                            <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: textSecondary }}>
                               {banco.tipoCuenta}
                             </Text>
                           </View>
 
-                          <ChevronRight size={18} color={isSelected ? banco.colorBg : '#9CA3AF'} />
+                          <ChevronRight size={18} color={isSelected ? banco.colorBg : textSecondary} />
                         </TouchableOpacity>
                       );
                     })}
@@ -529,7 +556,7 @@ export default function CartScreen() {
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
-                    <X size={20} color="#666" />
+                    <X size={20} color={textSecondary} />
                   </TouchableOpacity>
                 </View>
 
@@ -565,19 +592,19 @@ export default function CartScreen() {
                 </View>
 
                 {/* Detalle de Cobro */}
-                <View style={{ backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                <View style={{ backgroundColor: isDarkMode ? '#27272A' : '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#64748B' }}>Comercio receptor:</Text>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#0F172A' }}>SKIP Duoc UC ({storeName})</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Comercio receptor:</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary }}>SKIP Duoc UC ({storeName})</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#64748B' }}>Sede:</Text>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#0F172A' }}>San Joaquín</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Sede:</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary }}>San Joaquín</Text>
                   </View>
-                  <View style={{ height: 1, backgroundColor: '#E2E8F0', marginVertical: 8 }} />
+                  <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#0F172A' }}>Total a transferir:</Text>
-                    <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: bancoSeleccionado.colorBg }}>
+                    <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a transferir:</Text>
+                    <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : bancoSeleccionado.colorBg }}>
                       ${total.toLocaleString('es-CL')} CLP
                     </Text>
                   </View>
@@ -585,25 +612,25 @@ export default function CartScreen() {
 
                 {/* Métodos de Autorización Rápida */}
                 <View style={{ marginBottom: 20 }}>
-                  <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#64748B', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: textSecondary, marginBottom: 8 }}>
                     Autorización con {bancoSeleccionado.passNombre}:
                   </Text>
                   <View style={{ 
                     flexDirection: 'row', 
                     alignItems: 'center', 
-                    backgroundColor: '#F1F5F9', 
+                    backgroundColor: isDarkMode ? '#27272A' : '#F1F5F9', 
                     borderRadius: 12, 
                     padding: 12, 
                     justifyContent: 'space-between' 
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Lock size={16} color="#64748B" />
-                      <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#1E293B', letterSpacing: 4 }}>
+                      <Lock size={16} color={textSecondary} />
+                      <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary, letterSpacing: 4 }}>
                         {passCode}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Bold', color: '#475569' }}>
+                    <View style={{ backgroundColor: isDarkMode ? '#3F3F46' : '#E2E8F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Bold', color: textSecondary }}>
                         Verificado
                       </Text>
                     </View>
@@ -636,7 +663,7 @@ export default function CartScreen() {
                   onPress={cambiarBanco}
                   style={{ marginTop: 12, alignItems: 'center', paddingVertical: 4 }}
                 >
-                  <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#64748B' }}>
+                  <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: textSecondary }}>
                     Usar otro banco o billetera
                   </Text>
                 </TouchableOpacity>
@@ -658,10 +685,10 @@ export default function CartScreen() {
                   <ActivityIndicator size="large" color={bancoSeleccionado.colorBg} />
                 </View>
 
-                <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111', textAlign: 'center', marginBottom: 8 }}>
+                <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary, textAlign: 'center', marginBottom: 8 }}>
                   Conectando con {bancoSeleccionado.nombre}...
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#64748B', textAlign: 'center', maxWidth: 280, lineHeight: 18 }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, textAlign: 'center', maxWidth: 280, lineHeight: 18 }}>
                   Verificando fondos de CuentaRUT y enviando comanda a la cocina de {storeName}...
                 </Text>
               </View>
@@ -675,18 +702,18 @@ export default function CartScreen() {
                   width: 70, 
                   height: 70, 
                   borderRadius: 35, 
-                  backgroundColor: '#DCFCE7', 
+                  backgroundColor: isDarkMode ? '#064E3B' : '#DCFCE7', 
                   justifyContent: 'center', 
                   alignItems: 'center',
                   marginBottom: 16
                 }}>
-                  <CheckCircle2 size={40} color="#16A34A" />
+                  <CheckCircle2 size={40} color={isDarkMode ? '#34D399' : '#16A34A'} />
                 </View>
 
-                <Text style={{ fontSize: 22, fontFamily: 'Inter-Bold', color: '#111111', marginBottom: 4 }}>
+                <Text style={{ fontSize: 22, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 4 }}>
                   ¡Pago Confirmado!
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#64748B', textAlign: 'center', marginBottom: 20 }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, textAlign: 'center', marginBottom: 20 }}>
                   Transferencia exitosa desde {bancoSeleccionado.nombre}
                 </Text>
 

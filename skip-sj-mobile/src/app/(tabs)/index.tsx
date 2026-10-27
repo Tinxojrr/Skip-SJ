@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
-import { Search, Plus, MapPin } from 'lucide-react-native';
+import { Search, Plus, MapPin, Heart } from 'lucide-react-native';
+import { useFavoritesStore } from '../../store/favoritesStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter, useFocusEffect } from 'expo-router';
 
@@ -20,6 +22,15 @@ export default function HomeScreen() {
 
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
+  const { isDarkMode } = useThemeStore();
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.6)';
+  const textMuted = isDarkMode ? '#71717A' : 'rgba(17,17,17,0.4)';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
+  const cardAlt = isDarkMode ? '#27272A' : '#FAFAFA';
   const { session, profile } = useAuthStore();
   
   let shortName = 'Estudiante';
@@ -146,7 +157,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFA', paddingTop: 40 }}>
+    <View style={{ flex: 1, backgroundColor: bg, paddingTop: 40 }}>
       {loading && products.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#F2A900" />
@@ -157,8 +168,8 @@ export default function HomeScreen() {
           
           <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={{ color: '#111111', fontSize: 30, fontFamily: 'Inter-Bold', marginBottom: 6 }} numberOfLines={2}>Hola, {shortName} 👋</Text>
-              <Text style={{ color: 'rgba(17,17,17,0.6)', fontSize: 15, fontFamily: 'Inter-Regular', lineHeight: 22, flexWrap: 'wrap', flexShrink: 1 }}>{getGreetingSubtitle()}</Text>
+              <Text style={{ color: textPrimary, fontSize: 30, fontFamily: 'Inter-Bold', marginBottom: 6 }} numberOfLines={2}>Hola, {shortName} 👋</Text>
+              <Text style={{ color: textSecondary, fontSize: 15, fontFamily: 'Inter-Regular', lineHeight: 22, flexWrap: 'wrap', flexShrink: 1 }}>{getGreetingSubtitle()}</Text>
             </View>
             <View style={{ backgroundColor: '#111111', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, flexShrink: 0, marginTop: 4 }}>
               <Text style={{ color: '#F2A900', fontSize: 10, fontFamily: 'Inter-Bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Duoc UC</Text>
@@ -259,25 +270,25 @@ export default function HomeScreen() {
             <View style={{ 
               flexDirection: 'row', 
               alignItems: 'center', 
-              backgroundColor: '#FFFFFF', 
+              backgroundColor: cardBg, 
               paddingHorizontal: 20, 
               paddingVertical: 16, 
               borderRadius: 24,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.05,
+              shadowOpacity: isDarkMode ? 0.2 : 0.05,
               shadowRadius: 12,
               elevation: 2,
               borderWidth: 1,
-              borderColor: 'rgba(17,17,17,0.05)'
+              borderColor: borderColor
             }}>
               <Search color="#F2A900" size={20} />
-              <Text style={{ marginLeft: 12, color: 'rgba(17,17,17,0.4)', fontSize: 16, fontFamily: 'Inter-Regular' }}>Buscar comida, snacks...</Text>
+              <Text style={{ marginLeft: 12, color: textMuted, fontSize: 16, fontFamily: 'Inter-Regular' }}>Buscar comida, snacks...</Text>
             </View>
           </View>
 
           <View style={{ marginBottom: 32 }}>
-            <Text style={{ color: '#111111', fontSize: 18, fontFamily: 'Inter-Bold', marginBottom: 16, paddingHorizontal: 24 }}>¿De dónde quieres pedir?</Text>
+            <Text style={{ color: textPrimary, fontSize: 18, fontFamily: 'Inter-Bold', marginBottom: 16, paddingHorizontal: 24 }}>¿De dónde quieres pedir?</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
               <TouchableOpacity 
                 onPress={() => setActiveStore(null)}
@@ -287,11 +298,11 @@ export default function HomeScreen() {
                   width: 72, 
                   height: 72, 
                   borderRadius: 24, 
-                  backgroundColor: activeStore === null ? '#111111' : '#FFFFFF',
+                  backgroundColor: activeStore === null ? (isDarkMode ? '#F2A900' : '#111111') : cardBg,
                   justifyContent: 'center',
                   alignItems: 'center',
                   borderWidth: 1,
-                  borderColor: 'rgba(17,17,17,0.05)',
+                  borderColor: borderColor,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.05,
@@ -301,7 +312,7 @@ export default function HomeScreen() {
                 }}>
                   <Text style={{ fontSize: 28 }}>🌟</Text>
                 </View>
-                <Text style={{ color: '#111111', fontSize: 13, fontFamily: activeStore === null ? 'Inter-Bold' : 'Inter-SemiBold', textAlign: 'center' }}>Todos</Text>
+                <Text style={{ color: textPrimary, fontSize: 13, fontFamily: activeStore === null ? 'Inter-Bold' : 'Inter-SemiBold', textAlign: 'center' }}>Todos</Text>
               </TouchableOpacity>
 
               {stores.map((store) => (
@@ -314,7 +325,7 @@ export default function HomeScreen() {
                     width: 72, 
                     height: 72, 
                     borderRadius: 24, 
-                    backgroundColor: activeStore === store.id ? '#111111' : '#FFFFFF',
+                    backgroundColor: activeStore === store.id ? (isDarkMode ? '#F2A900' : '#111111') : cardBg,
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderWidth: 1,
@@ -333,7 +344,7 @@ export default function HomeScreen() {
                       <Text style={{ fontSize: 28 }}>{store.emoji || '🏪'}</Text>
                     )}
                   </View>
-                  <Text style={{ color: '#111111', fontSize: 13, fontFamily: activeStore === store.id ? 'Inter-Bold' : 'Inter-Regular', textAlign: 'center' }} numberOfLines={1}>
+                  <Text style={{ color: textPrimary, fontSize: 13, fontFamily: activeStore === store.id ? 'Inter-Bold' : 'Inter-Regular', textAlign: 'center' }} numberOfLines={1}>
                     {store.nombre}
                   </Text>
                 </TouchableOpacity>
@@ -346,31 +357,31 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 onPress={() => setActiveCategory('Todos')}
                 style={{ 
-                  backgroundColor: activeCategory === 'Todos' ? '#111111' : '#FFFFFF', 
+                  backgroundColor: activeCategory === 'Todos' ? (isDarkMode ? '#F2A900' : '#111111') : cardBg, 
                   paddingHorizontal: 20, 
                   paddingVertical: 10, 
                   borderRadius: 100,
                   borderWidth: 1,
-                  borderColor: 'rgba(17,17,17,0.05)'
+                  borderColor: borderColor
                 }}
               >
-                <Text style={{ color: activeCategory === 'Todos' ? '#FFFFFF' : 'rgba(17,17,17,0.6)', fontSize: 14, fontFamily: activeCategory === 'Todos' ? 'Inter-Bold' : 'Inter-SemiBold' }}>Todos</Text>
+                <Text style={{ color: activeCategory === 'Todos' ? (isDarkMode ? '#09090B' : '#FFFFFF') : textSecondary, fontSize: 14, fontFamily: activeCategory === 'Todos' ? 'Inter-Bold' : 'Inter-SemiBold' }}>Todos</Text>
               </TouchableOpacity>
               
               {categories.map((cat) => (
                 <TouchableOpacity 
-                  key={cat.id}
+                  key={cat.id} 
                   onPress={() => setActiveCategory(cat.nombre)}
                   style={{ 
-                    backgroundColor: activeCategory === cat.nombre ? '#111111' : '#FFFFFF', 
+                    backgroundColor: activeCategory === cat.nombre ? (isDarkMode ? '#F2A900' : '#111111') : cardBg, 
                     paddingHorizontal: 20, 
                     paddingVertical: 10, 
                     borderRadius: 100,
                     borderWidth: 1,
-                    borderColor: 'rgba(17,17,17,0.05)'
+                    borderColor: borderColor
                   }}
                 >
-                  <Text style={{ color: activeCategory === cat.nombre ? '#FFFFFF' : 'rgba(17,17,17,0.6)', fontSize: 14, fontFamily: activeCategory === cat.nombre ? 'Inter-Bold' : 'Inter-SemiBold' }}>
+                  <Text style={{ color: activeCategory === cat.nombre ? (isDarkMode ? '#09090B' : '#FFFFFF') : textSecondary, fontSize: 14, fontFamily: activeCategory === cat.nombre ? 'Inter-Bold' : 'Inter-SemiBold' }}>
                     {cat.nombre}
                   </Text>
                 </TouchableOpacity>
@@ -380,7 +391,7 @@ export default function HomeScreen() {
 
           <View style={{ paddingHorizontal: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ color: '#111111', fontSize: 20, fontFamily: 'Inter-Bold' }}>
+              <Text style={{ color: textPrimary, fontSize: 20, fontFamily: 'Inter-Bold' }}>
                 {activeCategory === 'Todos' ? 'Todos los productos 🔥' : activeCategory}
               </Text>
               <Text style={{ color: 'rgba(17,17,17,0.4)', fontSize: 14, fontFamily: 'Inter-Regular' }}>{filteredProducts.length} items</Text>
@@ -393,38 +404,74 @@ export default function HomeScreen() {
                   onPress={() => router.push(('/product/' + product.id) as any)}
                   style={{ 
                     flexDirection: 'row', 
-                    backgroundColor: '#FFFFFF', 
+                    backgroundColor: cardBg, 
                     borderRadius: 24, 
                     padding: 16,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.05,
+                    shadowOpacity: isDarkMode ? 0.3 : 0.05,
                     shadowRadius: 24,
                     elevation: 4,
                     borderWidth: 1,
-                    borderColor: 'rgba(17,17,17,0.03)'
+                    borderColor: borderColor
                   }}>
-                  <View style={{ width: 100, height: 100, borderRadius: 16, backgroundColor: '#FAFAFA', justifyContent: 'center', alignItems: 'center', marginRight: 16, overflow: 'hidden' }}>
+                  <View style={{ width: 100, height: 100, borderRadius: 16, backgroundColor: cardAlt, justifyContent: 'center', alignItems: 'center', marginRight: 16, overflow: 'hidden', position: 'relative' }}>
                     {product.imagen_url ? (
                       <Image source={{ uri: product.imagen_url }} style={{ width: '100%', height: '100%' }} />
                     ) : (
                       <Text style={{ fontSize: 40 }}>{product.emoji || '🍔'}</Text>
                     )}
+                    <TouchableOpacity 
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        toggleFavorite({
+                          id: product.id,
+                          name: product.nombre_producto,
+                          price: product.precio,
+                          storeName: product.locatarios?.nombre || 'Local',
+                          imageUrl: product.imagen_url,
+                          emoji: product.emoji
+                        });
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        width: 28,
+                        height: 28,
+                        borderRadius: 14,
+                        backgroundColor: isDarkMode ? 'rgba(39,39,42,0.92)' : 'rgba(255,255,255,0.92)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 3,
+                        elevation: 2,
+                        zIndex: 10
+                      }}
+                    >
+                      <Heart 
+                        size={15} 
+                        color={isFavorite(product.id) ? '#EF4444' : (isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.35)')} 
+                        fill={isFavorite(product.id) ? '#EF4444' : 'transparent'} 
+                      />
+                    </TouchableOpacity>
                   </View>
                   <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 4 }}>
                     <View>
-                      <Text style={{ color: 'rgba(17,17,17,0.4)', fontSize: 11, fontFamily: 'Inter-Bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                      <Text style={{ color: textSecondary, fontSize: 11, fontFamily: 'Inter-Bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
                         {product.locatarios?.nombre || 'Local'} • {product.categorias_menu?.nombre || 'General'}
                       </Text>
-                      <Text style={{ color: '#111111', fontSize: 16, fontFamily: 'Inter-Bold', marginBottom: 4 }} numberOfLines={2}>
+                      <Text style={{ color: textPrimary, fontSize: 16, fontFamily: 'Inter-Bold', marginBottom: 4 }} numberOfLines={2}>
                         {product.nombre_producto}
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <View style={{ backgroundColor: 'rgba(242,169,0,0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 }}>
-                        <Text style={{ color: '#000000', fontSize: 15, fontFamily: 'Inter-Bold' }}>${product.precio}</Text>
+                      <View style={{ backgroundColor: isDarkMode ? 'rgba(242,169,0,0.18)' : 'rgba(242,169,0,0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 }}>
+                        <Text style={{ color: isDarkMode ? '#F2A900' : '#000000', fontSize: 15, fontFamily: 'Inter-Bold' }}>${product.precio}</Text>
                       </View>
-                      <View style={{ backgroundColor: '#111111', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ backgroundColor: isDarkMode ? '#27272A' : '#111111', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}>
                         <Plus color="#F2A900" size={20} />
                       </View>
                     </View>
@@ -434,10 +481,10 @@ export default function HomeScreen() {
             </View>
             
             {filteredProducts.length === 0 && (
-              <View style={{ alignItems: 'center', paddingVertical: 40, backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(17,17,17,0.05)' }}>
+              <View style={{ alignItems: 'center', paddingVertical: 40, backgroundColor: cardBg, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
                 <Text style={{ fontSize: 48, marginBottom: 16 }}>🔍</Text>
-                <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: '#111111', marginBottom: 8 }}>No hay productos</Text>
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: 'rgba(17,17,17,0.5)', textAlign: 'center', paddingHorizontal: 32 }}>
+                <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: textPrimary, marginBottom: 8 }}>No hay productos</Text>
+                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: textSecondary, textAlign: 'center', paddingHorizontal: 32 }}>
                   Intenta seleccionando otra categoría o local.
                 </Text>
               </View>

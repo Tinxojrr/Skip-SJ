@@ -30,6 +30,7 @@ interface PedidoHistorial {
     cantidad: number;
     precio_unitario: number;
     subtotal: number;
+    notas?: string | null;
     productos?: {
       nombre_producto: string;
     } | null;
@@ -68,6 +69,7 @@ export const HistorialPedidosPage = () => {
             cantidad,
             precio_unitario,
             subtotal,
+            notas,
             productos (
               nombre_producto
             )
@@ -79,7 +81,44 @@ export const HistorialPedidosPage = () => {
         query = query.eq('locatario_id', locatarioId);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error && error.message?.includes('notas')) {
+        let fallbackQuery = supabase
+          .from('pedidos')
+          .select(`
+            id,
+            codigo_retiro,
+            estado,
+            monto_total,
+            created_at,
+            updated_at,
+            usuarios (
+              p_nombre,
+              apellido_p,
+              apodo,
+              email
+            ),
+            pedido_items (
+              id,
+              cantidad,
+              precio_unitario,
+              subtotal,
+              productos (
+                nombre_producto
+              )
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (role !== 'super_admin' && locatarioId) {
+          fallbackQuery = fallbackQuery.eq('locatario_id', locatarioId);
+        }
+        const fallbackRes = await fallbackQuery;
+        data = fallbackRes.data as any;
+        error = fallbackRes.error;
+      }
+
       if (!error && data) {
         setPedidos(data as any as PedidoHistorial[]);
       } else if (error) {
@@ -271,6 +310,11 @@ export const HistorialPedidosPage = () => {
                             {items.map((item, idx) => (
                               <div key={item.id || idx}>
                                 <span className="font-semibold text-zinc-800 dark:text-zinc-200">{item.cantidad}x</span> {item.productos?.nombre_producto || 'Producto'}
+                                {item.notas && (
+                                  <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-medium italic">
+                                    Nota: {item.notas}
+                                  </span>
+                                )}
                               </div>
                             ))}
                           </div>

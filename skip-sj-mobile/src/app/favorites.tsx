@@ -1,121 +1,171 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Heart, ShoppingCart } from 'lucide-react-native';
-
-const MOCK_FAVORITES = [
-  {
-    id: 'f1',
-    nombre: 'Menú Junaeb Tradicional',
-    local: 'Casino Duoc',
-    precio: 2500,
-    imagen: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300&auto=format&fit=crop'
-  },
-  {
-    id: 'f2',
-    nombre: 'Café Latte Grande',
-    local: 'Cafetería Central',
-    precio: 2200,
-    imagen: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300&auto=format&fit=crop'
-  },
-  {
-    id: 'f3',
-    nombre: 'Sándwich Ave Palta',
-    local: 'El Bajón Estudiantil',
-    precio: 3500,
-    imagen: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=300&auto=format&fit=crop'
-  }
-];
+import { ArrowLeft, Heart, ShoppingCart, Trash2, Store } from 'lucide-react-native';
+import { useFavoritesStore, FavoriteItem } from '../store/favoritesStore';
+import { useThemeStore } from '../store/themeStore';
+import { useCartStore } from '../store/cartStore';
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const [favorites, setFavorites] = useState(MOCK_FAVORITES);
+  const { favorites, toggleFavorite } = useFavoritesStore();
+  const { addItem } = useCartStore();
+  const { isDarkMode } = useThemeStore();
 
-  const toggleFavorite = (id: string) => {
-    // Para el mockup, simplemente lo removemos de la lista visual
-    setFavorites(prev => prev.filter(item => item.id !== id));
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
+  const cardAlt = isDarkMode ? '#27272A' : '#F8FAFC';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.5)';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
+
+  const handleAddToCart = (item: FavoriteItem) => {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+      storeName: item.storeName
+    });
+    Alert.alert("¡Agregado al Carrito!", `${item.name} fue añadido a tu pedido.`);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(17,17,17,0.05)' }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, marginLeft: -8 }}>
-          <ArrowLeft color="#111111" size={24} />
-        </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#111111', marginLeft: 12 }}>Mis Favoritos</Text>
+      <View style={{ 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        paddingHorizontal: 20, 
+        paddingVertical: 16, 
+        backgroundColor: cardBg, 
+        borderBottomWidth: 1, 
+        borderBottomColor: borderColor 
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 6, marginLeft: -6 }}>
+            <ArrowLeft color={textPrimary} size={24} />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary, marginLeft: 10 }}>
+            Mis Favoritos
+          </Text>
+        </View>
+        <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 12, color: '#EF4444' }}>
+            {favorites.length} {favorites.length === 1 ? 'guardado' : 'guardados'}
+          </Text>
+        </View>
       </View>
 
       {/* Content */}
-      <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} showsVerticalScrollIndicator={false}>
         {favorites.map((item) => (
-          <View 
+          <TouchableOpacity 
             key={item.id} 
+            activeOpacity={0.85}
+            onPress={() => {
+              router.push(('/product/' + item.id) as any);
+            }}
             style={{
               flexDirection: 'row',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: cardBg,
               borderRadius: 20,
-              padding: 12,
+              padding: 14,
               borderWidth: 1,
-              borderColor: 'rgba(17,17,17,0.05)',
+              borderColor: borderColor,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.03,
+              shadowOpacity: isDarkMode ? 0.25 : 0.03,
               shadowRadius: 8,
-              elevation: 1,
+              elevation: 2,
               alignItems: 'center'
             }}
           >
             {/* Imagen */}
-            <Image 
-              source={{ uri: item.imagen }} 
-              style={{ width: 80, height: 80, borderRadius: 16 }} 
-              resizeMode="cover"
-            />
+            <View style={{ width: 76, height: 76, borderRadius: 16, backgroundColor: cardAlt, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+              {item.imageUrl ? (
+                <Image 
+                  source={{ uri: item.imageUrl }} 
+                  style={{ width: '100%', height: '100%' }} 
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{ fontSize: 32 }}>{item.emoji || '🍔'}</Text>
+              )}
+            </View>
 
             {/* Info */}
-            <View style={{ flex: 1, marginLeft: 16, justifyContent: 'space-between', height: 80, paddingVertical: 2 }}>
+            <View style={{ flex: 1, marginLeft: 14, justifyContent: 'space-between', minHeight: 76, paddingVertical: 2 }}>
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: '#111111', flex: 1, marginRight: 8 }} numberOfLines={2}>
-                    {item.nombre}
+                  <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: textPrimary, flex: 1, marginRight: 8 }} numberOfLines={2}>
+                    {item.name}
                   </Text>
-                  <TouchableOpacity onPress={() => toggleFavorite(item.id)} style={{ padding: 4, marginRight: -4, marginTop: -4 }}>
-                    <Heart color="#E53E3E" fill="#E53E3E" size={20} />
+                  
+                  {/* Botón Corazón para Desmarcar */}
+                  <TouchableOpacity 
+                    onPress={() => toggleFavorite(item)} 
+                    style={{ padding: 4, marginRight: -4, marginTop: -4 }}
+                  >
+                    <Heart color="#EF4444" fill="#EF4444" size={20} />
                   </TouchableOpacity>
                 </View>
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: 'rgba(17,17,17,0.5)', marginTop: 2 }}>
-                  {item.local}
-                </Text>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                  <Store size={12} color={textSecondary} style={{ marginRight: 4 }} />
+                  <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: textSecondary }}>
+                    {item.storeName}
+                  </Text>
+                </View>
               </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: '#F2A900' }}>
-                  ${item.precio.toLocaleString('es-CL')}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                <Text style={{ fontFamily: 'Inter-Bold', fontSize: 15, color: isDarkMode ? '#F2A900' : '#003D7A' }}>
+                  ${item.price.toLocaleString('es-CL')}
                 </Text>
                 
-                <TouchableOpacity style={{ backgroundColor: '#111111', width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}>
-                  <ShoppingCart color="#FFFFFF" size={16} />
+                <TouchableOpacity 
+                  onPress={() => handleAddToCart(item)}
+                  style={{ 
+                    backgroundColor: isDarkMode ? '#27272A' : '#111111', 
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 12, 
+                    paddingVertical: 7, 
+                    borderRadius: 12,
+                    gap: 6
+                  }}
+                >
+                  <ShoppingCart color="#F2A900" size={14} />
+                  <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 12 }}>Pedir</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
 
         {favorites.length === 0 && (
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
-            <Heart color="rgba(17,17,17,0.2)" size={48} />
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 16, color: 'rgba(17,17,17,0.5)', marginTop: 16 }}>
-              Aún no tienes favoritos
+          <View style={{ alignItems: 'center', marginTop: 80, paddingHorizontal: 32 }}>
+            <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(239,68,68,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <Heart color="#EF4444" size={40} opacity={0.7} />
+            </View>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: textPrimary, marginBottom: 8, textAlign: 'center' }}>
+              Tu lista de favoritos está vacía
             </Text>
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: 'rgba(17,17,17,0.4)', marginTop: 8, textAlign: 'center' }}>
-              Guarda los productos que más te gustan para pedirlos más rápido.
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+              Toca el corazón en cualquier producto del menú para guardarlo aquí y pedirlo en un solo toque en tu próximo recreo.
             </Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/')}
+              style={{ backgroundColor: isDarkMode ? '#F2A900' : '#003D7A', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14 }}
+            >
+              <Text style={{ color: isDarkMode ? '#111111' : '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 14 }}>Explorar el Menú</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
-

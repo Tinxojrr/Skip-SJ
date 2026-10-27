@@ -1,18 +1,18 @@
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme, View, Text } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { useThemeStore } from '../store/themeStore';
 import '../global.css';
 
 export { ErrorBoundary } from 'expo-router';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  console.log("RootLayout rendering...");
+  const { isDarkMode } = useThemeStore();
   
-  const [fontsLoaded, fontError] = useFonts({
+  const [fontsLoaded] = useFonts({
     'Inter-Regular': Inter_400Regular,
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
@@ -25,7 +25,8 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <ThemeProvider value={isDarkMode ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />

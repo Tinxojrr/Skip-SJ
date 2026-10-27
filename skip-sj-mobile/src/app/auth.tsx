@@ -159,26 +159,6 @@ export default function AuthScreen() {
     }
   };
 
-  const handleTestLogin = () => {
-    const mockSession = {
-      access_token: 'test_token',
-      refresh_token: 'test_token',
-      expires_in: 3600,
-      token_type: 'bearer',
-      user: {
-        id: 'test-user-123',
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: 'alumno.prueba@duocuc.cl',
-        app_metadata: { provider: 'email' },
-        user_metadata: { full_name: 'Martin Perez' }, // Nombre por defecto o Alumno de Prueba
-        created_at: new Date().toISOString(),
-      }
-    };
-    setSession(mockSession as any);
-    router.replace('/(tabs)');
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
       {/* Background Blobs - Paleta Oficial Duoc UC Invertida (Balanceada) */}
@@ -287,13 +267,6 @@ export default function AuthScreen() {
                     onPress={handleAuth}
                     loading={loading}
                   />
-
-                  {/* Para producción esto se quitaría, pero lo dejamos por si necesitas bypass rápido */}
-                  {/* <TouchableOpacity onPress={handleTestLogin} style={{ marginTop: 20, alignItems: 'center', padding: 8 }}>
-                    <Text style={{ color: '#0056A3', fontSize: 13, fontFamily: 'Inter-SemiBold', textDecorationLine: 'underline' }}>
-                      O continuar con Usuario de Prueba
-                    </Text>
-                  </TouchableOpacity> */}
                 </View>
 
                 {/* Switch Form Link */}
