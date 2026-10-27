@@ -1,17 +1,48 @@
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database.types';
 
 const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return SecureStore.getItemAsync(key);
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web' || typeof window === 'undefined') {
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+      return null;
+    }
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
   },
-  setItem: (key: string, value: string) => {
-    SecureStore.setItemAsync(key, value);
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === 'web' || typeof window === 'undefined') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+      return;
+    }
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch {
+      // ignorar en entornos sin keystore
+    }
   },
-  removeItem: (key: string) => {
-    SecureStore.deleteItemAsync(key);
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === 'web' || typeof window === 'undefined') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+      return;
+    }
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // ignorar
+    }
   },
 };
 

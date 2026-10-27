@@ -206,7 +206,7 @@ export default function HomeScreen() {
           )}
 
           {activePromo ? (
-            <TouchableOpacity onPress={() => router.push('/product/' + activePromo.producto_id)} style={{ paddingHorizontal: 24, marginBottom: 28 }}>
+            <TouchableOpacity onPress={() => router.push(('/product/' + activePromo.producto_id) as any)} style={{ paddingHorizontal: 24, marginBottom: 28 }}>
               <View style={{ 
                 backgroundColor: '#111111', 
                 borderRadius: 24, 
@@ -390,7 +390,7 @@ export default function HomeScreen() {
               {filteredProducts.map((product) => (
                 <TouchableOpacity 
                   key={product.id}
-                  onPress={() => router.push('/product/' + product.id)}
+                  onPress={() => router.push(('/product/' + product.id) as any)}
                   style={{ 
                     flexDirection: 'row', 
                     backgroundColor: '#FFFFFF', 
