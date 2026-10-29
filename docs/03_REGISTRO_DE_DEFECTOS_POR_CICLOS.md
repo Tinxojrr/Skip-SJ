@@ -156,3 +156,4 @@
 * **Acción Correctiva:** Conexión de modales informativos institucionales reales y redirección a la pantalla de gestión de tarjetas `add-payment.tsx`.
 * **Responsable:** Desarrollador Móvil.
 * **Resultado de Re-validación:** **Cerrado / Validado (Aprobado).** Se eliminó todo rastro de texto de simulación en la app.
+

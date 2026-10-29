@@ -236,3 +236,4 @@
 * **Resultado Esperado:** El producto no se muestra en el catálogo de los estudiantes, evitando ventas de productos sin inventario en cocina.
 * **Resultado Obtenido:** Producto retirado al instante del listado de la app.
 * **Estado:** **Aprobado**
+

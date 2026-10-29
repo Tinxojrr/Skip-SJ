@@ -80,3 +80,4 @@ __________________________________              ________________________________
     Líder de Proyecto / QA                          Docente Guía / Duoc UC
      Equipo SKIP Duoc UC                             Sede San Joaquín
 ```
+

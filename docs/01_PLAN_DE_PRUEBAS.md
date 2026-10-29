@@ -133,3 +133,4 @@ Las pruebas se suspenderán temporalmente si:
 
 ### 5.3. Criterios de Reanudación
 Las pruebas se reanudarán una vez desplegado el hotfix correspondiente y validada la restauración del servicio mediante una prueba de humo (*Smoke Test*).
+

@@ -210,3 +210,4 @@ Para distribuir la aplicación a los estudiantes mediante enlace de descarga o a
 | **Los pedidos nuevos no suenan ni aparecen en vivo en cocina** | La tabla `pedidos` no tiene activa la replicación Realtime en Supabase. | Ir al dashboard de Supabase ➔ Database ➔ Replication ➔ Habilitar el switch para la tabla `pedidos`. |
 | **Error `fetch failed` al consultar productos en local** | El firewall local de Windows o el proxy de la red institucional bloquea la conexión externa. | Verificar conectividad ejecutando `curl https://<tu-id>.supabase.co/rest/v1/` y validar que las credenciales de anon key sean válidas. |
 | **El Copiloto IA arroja error al generar diagnósticos** | Cuota de la API de Gemini superada o API Key no configurada en `.env`. | Obtener una nueva API Key gratuita en [Google AI Studio](https://aistudio.google.com/) y colocarla en `VITE_GEMINI_API_KEY`. |
+

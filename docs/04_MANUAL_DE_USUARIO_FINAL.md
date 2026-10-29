@@ -123,3 +123,4 @@ En la sección **"Copiloto IA"**, el administrador del local cuenta con un aseso
 
 * **Diagnóstico de Flujo:** Detecta si los pedidos se están acumulando más de 12 minutos en mesón y sugiere redestinar un ayudante a despacho.
 * **Estrategia de Upselling:** Analiza qué productos se venden juntos habitualmente y recomienda promociones de combos (ej: *"Ofrece bebida en lata con la empanada por $600 adicionales"*) estimando el incremento de facturación diaria.
+
