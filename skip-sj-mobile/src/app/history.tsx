@@ -113,7 +113,7 @@ export default function OrderHistoryScreen() {
         return { color: '#E53E3E', text: 'Cancelado', icon: XCircle };
       case 'listo_retiro':
       case 'listo para retiro':
-        return { color: '#003D7A', text: '¡Listo para Retiro!', icon: CheckCircle2 };
+        return { color: isDarkMode ? '#38BDF8' : '#003D7A', text: '¡Listo para Retiro!', icon: CheckCircle2 };
       case 'en_preparacion':
       case 'en preparacion':
       case 'preparando':

@@ -11,7 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, profile, fetchProfile } = useAuthStore();
-  const { isDarkMode } = useThemeStore();
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
 
   const bg = isDarkMode ? '#09090B' : '#FAFAFA';
   const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';

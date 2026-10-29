@@ -24,7 +24,7 @@ export default function HomeScreen() {
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isDarkMode } = useThemeStore();
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const bg = isDarkMode ? '#09090B' : '#FAFAFA';
   const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
   const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
@@ -313,7 +313,7 @@ export default function HomeScreen() {
                 }}>
                   <Text style={{ fontSize: 28 }}>🌟</Text>
                 </View>
-                <Text style={{ color: textPrimary, fontSize: 13, fontFamily: activeStore === null ? 'Inter-Bold' : 'Inter-SemiBold', textAlign: 'center' }}>Todos</Text>
+                <Text style={{ color: activeStore === null ? textPrimary : textSecondary, fontSize: 13, fontFamily: activeStore === null ? 'Inter-Bold' : 'Inter-SemiBold', textAlign: 'center' }}>Todos</Text>
               </TouchableOpacity>
 
               {stores.map((store) => (
@@ -330,7 +330,7 @@ export default function HomeScreen() {
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderWidth: 1,
-                    borderColor: 'rgba(17,17,17,0.05)',
+                    borderColor: borderColor,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.05,
@@ -345,7 +345,7 @@ export default function HomeScreen() {
                       <Text style={{ fontSize: 28 }}>{store.emoji || '🏪'}</Text>
                     )}
                   </View>
-                  <Text style={{ color: textPrimary, fontSize: 13, fontFamily: activeStore === store.id ? 'Inter-Bold' : 'Inter-Regular', textAlign: 'center' }} numberOfLines={1}>
+                  <Text style={{ color: activeStore === store.id ? textPrimary : textSecondary, fontSize: 13, fontFamily: activeStore === store.id ? 'Inter-Bold' : 'Inter-Regular', textAlign: 'center' }} numberOfLines={1}>
                     {store.nombre}
                   </Text>
                 </TouchableOpacity>
@@ -358,15 +358,15 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 onPress={() => setActiveCategory('Todos')}
                 style={{ 
-                  backgroundColor: activeCategory === 'Todos' ? (isDarkMode ? '#F2A900' : '#111111') : cardBg, 
+                  backgroundColor: activeCategory === 'Todos' ? '#F2A900' : cardBg, 
                   paddingHorizontal: 20, 
                   paddingVertical: 10, 
                   borderRadius: 100,
                   borderWidth: 1,
-                  borderColor: borderColor
+                  borderColor: activeCategory === 'Todos' ? '#F2A900' : borderColor
                 }}
               >
-                <Text style={{ color: activeCategory === 'Todos' ? (isDarkMode ? '#09090B' : '#FFFFFF') : textSecondary, fontSize: 14, fontFamily: activeCategory === 'Todos' ? 'Inter-Bold' : 'Inter-SemiBold' }}>Todos</Text>
+                <Text style={{ color: activeCategory === 'Todos' ? '#09090B' : textSecondary, fontSize: 14, fontFamily: activeCategory === 'Todos' ? 'Inter-Bold' : 'Inter-SemiBold' }}>Todos</Text>
               </TouchableOpacity>
               
               {categories.map((cat) => (
@@ -374,15 +374,15 @@ export default function HomeScreen() {
                   key={cat.id} 
                   onPress={() => setActiveCategory(cat.nombre)}
                   style={{ 
-                    backgroundColor: activeCategory === cat.nombre ? (isDarkMode ? '#F2A900' : '#111111') : cardBg, 
+                    backgroundColor: activeCategory === cat.nombre ? '#F2A900' : cardBg, 
                     paddingHorizontal: 20, 
                     paddingVertical: 10, 
                     borderRadius: 100,
                     borderWidth: 1,
-                    borderColor: borderColor
+                    borderColor: activeCategory === cat.nombre ? '#F2A900' : borderColor
                   }}
                 >
-                  <Text style={{ color: activeCategory === cat.nombre ? (isDarkMode ? '#09090B' : '#FFFFFF') : textSecondary, fontSize: 14, fontFamily: activeCategory === cat.nombre ? 'Inter-Bold' : 'Inter-SemiBold' }}>
+                  <Text style={{ color: activeCategory === cat.nombre ? '#09090B' : textSecondary, fontSize: 14, fontFamily: activeCategory === cat.nombre ? 'Inter-Bold' : 'Inter-SemiBold' }}>
                     {cat.nombre}
                   </Text>
                 </TouchableOpacity>
@@ -395,7 +395,7 @@ export default function HomeScreen() {
               <Text style={{ color: textPrimary, fontSize: 20, fontFamily: 'Inter-Bold' }}>
                 {activeCategory === 'Todos' ? 'Todos los productos 🔥' : activeCategory}
               </Text>
-              <Text style={{ color: 'rgba(17,17,17,0.4)', fontSize: 14, fontFamily: 'Inter-Regular' }}>{filteredProducts.length} items</Text>
+              <Text style={{ color: textSecondary, fontSize: 14, fontFamily: 'Inter-Regular' }}>{filteredProducts.length} items</Text>
             </View>
 
             <View style={{ gap: 20 }}>

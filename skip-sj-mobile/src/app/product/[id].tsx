@@ -13,7 +13,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const { addItem } = useCartStore();
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isDarkMode } = useThemeStore();
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
 
   const bg = isDarkMode ? '#09090B' : '#FAFAFA';
   const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
@@ -232,7 +232,7 @@ export default function ProductDetailScreen() {
           bottom: 0, 
           left: 0, 
           right: 0, 
-          backgroundColor: bg, 
+          backgroundColor: isDarkMode ? '#121217' : '#FFFFFF', 
           paddingHorizontal: 24, 
           paddingTop: 16, 
           paddingBottom: 32, 

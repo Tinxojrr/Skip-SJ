@@ -3,6 +3,7 @@ import { View, TextInput, TextInputProps, TouchableOpacity, Text } from 'react-n
 import { BlurView } from 'expo-blur';
 import { Eye, EyeOff } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useThemeStore } from '../store/themeStore';
 
 interface GlassInputProps extends TextInputProps {
   icon?: React.ReactNode;
@@ -18,11 +19,12 @@ export const GlassInput: React.FC<GlassInputProps> = ({
   onBlur,
   ...props 
 }) => {
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const [isSecure, setIsSecure] = useState(isPassword);
   
   const isFocused = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({
-    borderBottomColor: isFocused.value ? '#0056A3' : 'rgba(200, 140, 20, 0.3)',
+    borderBottomColor: isFocused.value ? '#F2A900' : (isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(200, 140, 20, 0.3)'),
     transform: [{ scale: 1 + isFocused.value * 0.01 }]
   }));
 
@@ -35,15 +37,15 @@ export const GlassInput: React.FC<GlassInputProps> = ({
             borderRadius: 16,
             overflow: 'hidden',
             borderBottomWidth: 2,
-            backgroundColor: 'rgba(0,0,0,0.04)'
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
           }
         ]}
       >
-        <BlurView intensity={20} tint="light" style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+        <BlurView intensity={20} tint={isDarkMode ? 'dark' : 'light'} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
           {icon && <View style={{ marginRight: 12, opacity: 0.8 }}>{icon}</View>}
           <TextInput
-            style={{ flex: 1, color: '#1A1A1A', fontFamily: 'Inter-Regular', fontSize: 16 }}
-            placeholderTextColor="#6B7280"
+            style={{ flex: 1, color: isDarkMode ? '#F4F4F5' : '#1A1A1A', fontFamily: 'Inter-Regular', fontSize: 16 }}
+            placeholderTextColor={isDarkMode ? '#71717A' : '#6B7280'}
             secureTextEntry={isSecure}
             autoCapitalize="none"
             onFocus={(e) => {
@@ -62,9 +64,9 @@ export const GlassInput: React.FC<GlassInputProps> = ({
               style={{ padding: 8, marginRight: -8, opacity: 0.7 }}
             >
               {isSecure ? (
-                <EyeOff color="rgba(0, 50, 90, 0.5)" size={20} />
+                <EyeOff color={isDarkMode ? '#A1A1AA' : 'rgba(0, 50, 90, 0.5)'} size={20} />
               ) : (
-                <Eye color="rgba(0, 50, 90, 0.5)" size={20} />
+                <Eye color={isDarkMode ? '#A1A1AA' : 'rgba(0, 50, 90, 0.5)'} size={20} />
               )}
             </TouchableOpacity>
           )}

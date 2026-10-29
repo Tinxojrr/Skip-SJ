@@ -10,6 +10,7 @@ import { GlassInput } from '../components/GlassInput';
 import { GradientButton } from '../components/GradientButton';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -18,6 +19,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 export default function AuthScreen() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+
+  const bg = isDarkMode ? '#09090B' : '#FAFAFA';
+  const textPrimary = isDarkMode ? '#F4F4F5' : '#1A1A1A';
+  const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(26,26,26,0.6)';
 
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -160,14 +166,14 @@ export default function AuthScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       {/* Background Blobs - Paleta Oficial Duoc UC Invertida (Balanceada) */}
       <View style={{ position: 'absolute', width: '100%', height: '100%', overflow: 'hidden' }}>
-        <Animated.View style={[b1Style, { position: 'absolute', top: -150, left: -150, width: 500, height: 500, borderRadius: 250, backgroundColor: '#FFCC4D', opacity: 0.35 }]} />
-        <Animated.View style={[b2Style, { position: 'absolute', top: '15%', right: -150, width: 450, height: 450, borderRadius: 225, backgroundColor: '#8FBFE0', opacity: 0.32 }]} />
-        <Animated.View style={[b3Style, { position: 'absolute', bottom: -200, left: -100, width: 600, height: 600, borderRadius: 300, backgroundColor: '#FFCC4D', opacity: 0.35, shadowColor: '#FFC300', shadowOpacity: 0.1, shadowRadius: 30 }]} />
+        <Animated.View style={[b1Style, { position: 'absolute', top: -150, left: -150, width: 500, height: 500, borderRadius: 250, backgroundColor: isDarkMode ? '#F2A900' : '#FFCC4D', opacity: isDarkMode ? 0.15 : 0.35 }]} />
+        <Animated.View style={[b2Style, { position: 'absolute', top: '15%', right: -150, width: 450, height: 450, borderRadius: 225, backgroundColor: isDarkMode ? '#003D7A' : '#8FBFE0', opacity: isDarkMode ? 0.2 : 0.32 }]} />
+        <Animated.View style={[b3Style, { position: 'absolute', bottom: -200, left: -100, width: 600, height: 600, borderRadius: 300, backgroundColor: isDarkMode ? '#F2A900' : '#FFCC4D', opacity: isDarkMode ? 0.12 : 0.35, shadowColor: '#FFC300', shadowOpacity: 0.1, shadowRadius: 30 }]} />
         {/* Cuarto blob azul oscuro sutil para contraste */}
-        <Animated.View style={[b1Style, { position: 'absolute', bottom: -100, right: -100, width: 250, height: 250, borderRadius: 125, backgroundColor: '#8FBFE0', opacity: 0.32 }]} />
+        <Animated.View style={[b1Style, { position: 'absolute', bottom: -100, right: -100, width: 250, height: 250, borderRadius: 125, backgroundColor: isDarkMode ? '#003D7A' : '#8FBFE0', opacity: isDarkMode ? 0.2 : 0.32 }]} />
       </View>
 
       <SafeAreaView style={{ flex: 1 }}>
@@ -179,16 +185,16 @@ export default function AuthScreen() {
 
             <View style={{ alignItems: 'center', marginBottom: 40, marginTop: 40 }}>
               {/* Badge Duoc UC - Color Institucional Translucido */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,61,122,0.08)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: isDarkMode ? 'rgba(242,169,0,0.12)' : 'rgba(0,61,122,0.08)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginBottom: 16 }}>
                 <Image
                   source={require('../../assets/images/Logo_DuocUC.png')}
                   style={{ height: 16, width: 60, resizeMode: 'contain', marginRight: 10 }}
                 />
-                <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: '#003D7A', textTransform: 'uppercase', letterSpacing: 0.5 }}>San Joaquín</Text>
+                <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#F2A900' : '#003D7A', textTransform: 'uppercase', letterSpacing: 0.5 }}>San Joaquín</Text>
               </View>
 
-              <Text style={{ color: '#1A1A1A', fontSize: 48, fontFamily: 'Inter-Bold', lineHeight: 48, marginBottom: 8 }}>Skip Duoc UC</Text>
-              <Text style={{ color: 'rgba(26,26,26,0.6)', fontSize: 16, fontFamily: 'Inter-Regular' }}>Sin filas. Sin espera.</Text>
+              <Text style={{ color: textPrimary, fontSize: 48, fontFamily: 'Inter-Bold', lineHeight: 48, marginBottom: 8 }}>Skip Duoc UC</Text>
+              <Text style={{ color: textSecondary, fontSize: 16, fontFamily: 'Inter-Regular' }}>Sin filas. Sin espera.</Text>
             </View>
 
             {/* Glass Card */}
@@ -198,19 +204,19 @@ export default function AuthScreen() {
                 borderRadius: 24,
                 overflow: 'hidden',
                 borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.7)',
+                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.7)',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.08,
+                shadowOpacity: isDarkMode ? 0.3 : 0.08,
                 shadowRadius: 24,
               }}
             >
-              <BlurView intensity={40} tint="light" style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 36 }}>
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.25)' }} />
+              <BlurView intensity={40} tint={isDarkMode ? 'dark' : 'light'} style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 36 }}>
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: isDarkMode ? 'rgba(24, 24, 27, 0.75)' : 'rgba(255, 255, 255, 0.25)' }} />
 
                 {/* Título de estado */}
                 <View style={{ alignItems: 'center', marginBottom: 24 }}>
-                  <Text style={{ fontSize: 18, fontFamily: 'Inter-SemiBold', color: '#1A1A1A' }}>
+                  <Text style={{ fontSize: 18, fontFamily: 'Inter-SemiBold', color: textPrimary }}>
                     {isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
                   </Text>
                 </View>

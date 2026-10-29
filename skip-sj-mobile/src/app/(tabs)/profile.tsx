@@ -28,7 +28,8 @@ const MENU_ITEMS = [
 
 export default function ProfileScreen() {
   const { session, profile, setSession } = useAuthStore();
-  const { isDarkMode, toggleDarkMode } = useThemeStore();
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+  const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode);
   const router = useRouter();
 
   // Variables de tema dinámico
