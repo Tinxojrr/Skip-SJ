@@ -60,3 +60,4 @@ WHERE nombre_producto = 'Completo Italiano';
 UPDATE public.productos
 SET imagen_url = 'https://images.unsplash.com/photo-1615535248348-0457731f2dc2?q=80&w=1200'
 WHERE nombre_producto = 'Salchipapas Grandes';
+

@@ -96,3 +96,4 @@ export function getProductImage(product?: { nombre_producto?: string; imagen_url
 
   return product.imagen_url || null;
 }
+
