@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Heart, ShoppingCart, Trash2, Store } from 'lucide-react-native';
 import { useFavoritesStore, FavoriteItem } from '../store/favoritesStore';
 import { useThemeStore } from '../store/themeStore';
+import { getProductImage } from '../utils/productImages';
 import { useCartStore } from '../store/cartStore';
 
 export default function FavoritesScreen() {
@@ -85,9 +86,9 @@ export default function FavoritesScreen() {
           >
             {/* Imagen */}
             <View style={{ width: 76, height: 76, borderRadius: 16, backgroundColor: cardAlt, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-              {item.imageUrl ? (
+              {getProductImage({ nombre_producto: item.name, imagen_url: item.imageUrl }) ? (
                 <Image 
-                  source={{ uri: item.imageUrl }} 
+                  source={{ uri: getProductImage({ nombre_producto: item.name, imagen_url: item.imageUrl })! }} 
                   style={{ width: '100%', height: '100%' }} 
                   resizeMode="cover"
                 />

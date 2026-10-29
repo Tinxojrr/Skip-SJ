@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { getProductImage } from '../../utils/productImages';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -233,8 +234,8 @@ export default function HomeScreen() {
                   <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Inter-Bold', marginBottom: 4 }}>{activePromo.productos?.nombre_producto}</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'Inter-Regular' }}>En {activePromo.locatarios?.nombre}</Text>
                 </View>
-                {activePromo.productos?.imagen_url ? (
-                   <Image source={{ uri: activePromo.productos.imagen_url }} style={{ width: 80, height: 80, borderRadius: 40, position: 'absolute', right: -10, bottom: -10 }} />
+                {getProductImage(activePromo.productos) ? (
+                   <Image source={{ uri: getProductImage(activePromo.productos)! }} style={{ width: 80, height: 80, borderRadius: 40, position: 'absolute', right: -10, bottom: -10 }} />
                 ) : (
                   <View style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.8 }}>
                     <Text style={{ fontSize: 100 }}>🔥</Text>
@@ -416,8 +417,8 @@ export default function HomeScreen() {
                     borderColor: borderColor
                   }}>
                   <View style={{ width: 100, height: 100, borderRadius: 16, backgroundColor: cardAlt, justifyContent: 'center', alignItems: 'center', marginRight: 16, overflow: 'hidden', position: 'relative' }}>
-                    {product.imagen_url ? (
-                      <Image source={{ uri: product.imagen_url }} style={{ width: '100%', height: '100%' }} />
+                    {getProductImage(product) ? (
+                      <Image source={{ uri: getProductImage(product)! }} style={{ width: '100%', height: '100%' }} />
                     ) : (
                       <Text style={{ fontSize: 40 }}>{product.emoji || '🍔'}</Text>
                     )}
@@ -429,7 +430,7 @@ export default function HomeScreen() {
                           name: product.nombre_producto,
                           price: product.precio,
                           storeName: product.locatarios?.nombre || 'Local',
-                          imageUrl: product.imagen_url,
+                          imageUrl: getProductImage(product) || product.imagen_url,
                           emoji: product.emoji
                         });
                       }}

@@ -6,6 +6,7 @@ import { useFavoritesStore } from '../../store/favoritesStore';
 import { useThemeStore } from '../../store/themeStore';
 import { supabase } from '../../lib/supabase';
 import { useCartStore } from '../../store/cartStore';
+import { getProductImage } from '../../utils/productImages';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -92,8 +93,8 @@ export default function ProductDetailScreen() {
         <ScrollView contentContainerStyle={{ paddingBottom: 130 }} bounces={false} showsVerticalScrollIndicator={false}>
           {/* Header Image */}
           <View style={{ width: '100%', height: 300, backgroundColor: isDarkMode ? '#18181B' : 'rgba(17,17,17,0.05)', position: 'relative' }}>
-            {product.imagen_url ? (
-              <Image source={{ uri: product.imagen_url }} style={{ width: '100%', height: '100%' }} />
+            {getProductImage(product) ? (
+              <Image source={{ uri: getProductImage(product)! }} style={{ width: '100%', height: '100%' }} />
             ) : (
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                  <Text style={{ fontSize: 64 }}>🍽️</Text>
@@ -131,7 +132,7 @@ export default function ProductDetailScreen() {
                   name: product.nombre_producto,
                   price: product.precio,
                   storeName: product.locatarios?.nombre || 'Local',
-                  imageUrl: product.imagen_url,
+                  imageUrl: getProductImage(product) || product.imagen_url,
                   emoji: product.emoji
                 });
               }}
