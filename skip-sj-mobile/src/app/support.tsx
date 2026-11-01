@@ -42,7 +42,7 @@ const FAQS: FAQItem[] = [
     id: 2,
     categoria: 'pago',
     pregunta: '¿Cuáles son los métodos de pago aceptados?',
-    respuesta: 'Aceptamos transferencias automáticas directas vía Open Banking con los bancos chilenos más usados: BancoEstado (CuentaRUT), MACH, Santander, Banco de Chile, Falabella y Tenpo. También contamos con integración de saldo para Tarjeta Junaeb BAES (Sodexo / Edenred).'
+    respuesta: 'Aceptamos transferencias automáticas directas vía Open Banking con los bancos chilenos más usados: BancoEstado (CuentaRUT), MACH, Santander, Banco de Chile, Falabella y Tenpo. También aceptamos tarjetas de débito y crédito mediante Webpay Plus (Transbank).'
   },
   {
     id: 3,

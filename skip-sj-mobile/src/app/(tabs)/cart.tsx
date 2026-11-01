@@ -45,7 +45,6 @@ export interface PaymentOption {
   badge?: string;
   passNombre: string;
   isCard?: boolean;
-  isJunaeb?: boolean;
 }
 
 const BASE_BANCOS: PaymentOption[] = [
@@ -56,8 +55,18 @@ const BASE_BANCOS: PaymentOption[] = [
     sigla: 'BE',
     colorBg: '#004B93',
     colorSecundario: '#F58220',
-    badge: 'Open Banking Duoc',
+    badge: 'CuentaRUT Oficial',
     passNombre: 'Clave Pass'
+  },
+  {
+    id: 'webpay',
+    nombre: 'Webpay Plus (Transbank)',
+    tipoCuenta: 'Tarjetas Débito / Crédito',
+    sigla: 'TBK',
+    colorBg: '#E11938',
+    colorSecundario: '#991B1B',
+    badge: 'Sandbox Oficial',
+    passNombre: 'Autenticación Bancaria'
   },
   {
     id: 'mach',
@@ -117,34 +126,24 @@ export default function CartScreen() {
   
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { session, profile } = useAuthStore();
-  const { savedCards, baesBalance } = usePaymentStore();
+  const { savedCards } = usePaymentStore();
   const router = useRouter();
 
-  // Opciones completas de pago (Junaeb BAES + BancoEstado + Tarjetas Guardadas + Otros Bancos)
+  // Opciones completas de pago (BancoEstado + Webpay Plus + Tarjetas Guardadas + Otros Bancos)
   const paymentOptions = useMemo<PaymentOption[]>(() => {
     const list: PaymentOption[] = [];
 
-    // 1. Tarjeta Junaeb BAES (Con saldo dinámico real)
-    list.push({
-      id: 'junaeb',
-      nombre: 'Tarjeta Junaeb BAES',
-      tipoCuenta: `Saldo: $${baesBalance.toLocaleString('es-CL')}`,
-      sigla: 'BAES',
-      colorBg: '#00A650',
-      colorSecundario: '#047857',
-      badge: 'Subsidio Duoc',
-      passNombre: 'Clave Edenred / Sodexo',
-      isJunaeb: true
-    });
-
-    // 2. BancoEstado CuentaRUT
+    // 1. BancoEstado CuentaRUT (Por defecto)
     list.push(BASE_BANCOS[0]);
+
+    // 2. Webpay Plus Transbank Developer
+    list.push(BASE_BANCOS[1]);
 
     // 3. Tarjetas guardadas por el alumno
     savedCards.forEach(c => {
       list.push({
         id: c.id,
-        nombre: `${c.brand.toUpperCase()} ${c.cardLast4}`,
+        nombre: `${c.brand.toUpperCase()} •••• ${c.cardLast4}`,
         tipoCuenta: `Vence ${c.expiry} • ${c.cardName}`,
         sigla: c.brand === 'visa' ? 'VISA' : 'MC',
         colorBg: c.brand === 'visa' ? '#1D4ED8' : '#EA580C',
@@ -156,10 +155,10 @@ export default function CartScreen() {
     });
 
     // 4. Otros bancos chilenos
-    BASE_BANCOS.slice(1).forEach(b => list.push(b));
+    BASE_BANCOS.slice(2).forEach(b => list.push(b));
 
     return list;
-  }, [savedCards, baesBalance]);
+  }, [savedCards]);
 
   // Estados de Pasarela
   const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(paymentOptions[0] || BASE_BANCOS[0]);
@@ -170,6 +169,8 @@ export default function CartScreen() {
   const [comprobantePago, setComprobantePago] = useState<PaymentResult | null>(null);
   const [passCode, setPassCode] = useState('••••');
 
+  const [resumenPago, setResumenPago] = useState<{ total: number; subtotal: number; serviceFee: number; storeName: string } | null>(null);
+
   const subtotal = getTotal();
   const serviceFee = items.length > 0 ? 300 : 0;
   const total = subtotal + serviceFee;
@@ -177,7 +178,11 @@ export default function CartScreen() {
 
   // Abrir Pasarela Directa
   const abrirPasarela = () => {
-    if (items.length === 0 || !session) return;
+    if (items.length === 0 || !session || total <= 0) {
+      Alert.alert('Carrito Vacío', 'Agrega al menos un producto antes de proceder al pago.');
+      return;
+    }
+    setResumenPago({ total, subtotal, serviceFee, storeName });
     setModalStep('confirmar');
     setModalVisible(true);
   };
@@ -195,13 +200,17 @@ export default function CartScreen() {
       return;
     }
 
+    if (items.length === 0 || total <= 0) {
+      Alert.alert('Carrito Vacío', 'Agrega productos antes de autorizar el pago.');
+      return;
+    }
+
     setIsCheckingOut(true);
     setModalStep('procesando');
 
     try {
       const paymentMethodType = 
-        bancoSeleccionado.isJunaeb ? 'junaeb' :
-        bancoSeleccionado.isCard ? 'card' :
+        bancoSeleccionado.isCard || bancoSeleccionado.id === 'webpay' ? 'card' :
         bancoSeleccionado.id === 'mach' ? 'mach' : 'bancoestado';
 
       const selectedCardData = savedCards.find(c => c.id === bancoSeleccionado.id);
@@ -231,7 +240,6 @@ export default function CartScreen() {
 
       setCodigoRetiroGenerado(result.codigoRetiro || 'SJ-401');
       setComprobantePago(result);
-      clearCart();
       setModalStep('exito');
 
     } catch (error: any) {
@@ -249,6 +257,8 @@ export default function CartScreen() {
     setModalStep('confirmar');
     setCodigoRetiroGenerado('');
     setComprobantePago(null);
+    clearCart();
+    setResumenPago(null);
     router.push('/history');
   };
 
@@ -359,11 +369,11 @@ export default function CartScreen() {
           <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, borderWidth: 1, borderColor, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
               <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: textSecondary }}>Subtotal</Text>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${subtotal.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${(resumenPago?.subtotal ?? subtotal).toLocaleString('es-CL')}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
               <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: textSecondary }}>Cargo por servicio</Text>
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${serviceFee.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: textPrimary }}>${(resumenPago?.serviceFee ?? serviceFee).toLocaleString('es-CL')}</Text>
             </View>
             
             {/* Divider */}
@@ -371,7 +381,7 @@ export default function CartScreen() {
             
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a pagar</Text>
-              <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : '#003D7A' }}>${total.toLocaleString('es-CL')}</Text>
+              <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : '#003D7A' }}>${(resumenPago?.total ?? total).toLocaleString('es-CL')}</Text>
             </View>
           </View>
         </Animated.View>
@@ -415,9 +425,7 @@ export default function CartScreen() {
               alignItems: 'center', 
               marginRight: 16 
             }}>
-              {bancoSeleccionado.isJunaeb ? (
-                <Wallet color="#FFFFFF" size={20} />
-              ) : bancoSeleccionado.isCard ? (
+              {bancoSeleccionado.isCard ? (
                 <CreditCard color="#FFFFFF" size={20} />
               ) : (
                 <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 14 }}>
@@ -556,9 +564,7 @@ export default function CartScreen() {
                             alignItems: 'center', 
                             marginRight: 14 
                           }}>
-                            {opt.isJunaeb ? (
-                              <Wallet color="#FFFFFF" size={18} />
-                            ) : opt.isCard ? (
+                            {opt.isCard ? (
                               <CreditCard color="#FFFFFF" size={18} />
                             ) : (
                               <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 13 }}>

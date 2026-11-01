@@ -8,8 +8,8 @@ export function PaymentBreakdownWidget() {
   const [breakdown, setBreakdown] = useState({
     bancoEstadoMonto: 0,
     bancoEstadoPct: 0,
-    junaebMonto: 0,
-    junaebPct: 0,
+    webpayMonto: 0,
+    webpayPct: 0,
     otrosMonto: 0,
     otrosPct: 0,
     totalIngresos: 0,
@@ -30,7 +30,7 @@ export function PaymentBreakdownWidget() {
       const { data, error } = await query;
       if (!error && data) {
         let beMonto = 0;
-        let junaebMonto = 0;
+        let wpMonto = 0;
         let otrosMonto = 0;
         let total = 0;
 
@@ -38,21 +38,22 @@ export function PaymentBreakdownWidget() {
           const monto = p.monto_total || 0;
           total += monto;
 
-          if (p.metodo_pago === "junaeb") {
-            junaebMonto += monto;
-          } else if (p.metodo_pago === "mercadopago") {
-            otrosMonto += monto;
-          } else {
-            // "otro" representa BancoEstado Open Banking / transferencias en el sistema
+          if (p.metodo_pago === "mercadopago") {
+            // Mapeado a Webpay Plus Developer Sandbox
+            wpMonto += monto;
+          } else if (p.metodo_pago === "otro") {
+            // BancoEstado CuentaRUT u otros bancos vía Open Banking
             beMonto += monto;
+          } else {
+            otrosMonto += monto;
           }
         });
 
         setBreakdown({
           bancoEstadoMonto: beMonto,
           bancoEstadoPct: total > 0 ? Math.round((beMonto / total) * 100) : 0,
-          junaebMonto: junaebMonto,
-          junaebPct: total > 0 ? Math.round((junaebMonto / total) * 100) : 0,
+          webpayMonto: wpMonto,
+          webpayPct: total > 0 ? Math.round((wpMonto / total) * 100) : 0,
           otrosMonto: otrosMonto,
           otrosPct: total > 0 ? Math.round((otrosMonto / total) * 100) : 0,
           totalIngresos: total,
@@ -95,24 +96,24 @@ export function PaymentBreakdownWidget() {
       icon: CreditCard,
     },
     {
-      id: "junaeb",
-      name: "Tarjeta Junaeb BAES",
-      sub: "Beca de Alimentación Estudiantil",
-      monto: breakdown.junaebMonto,
-      porcentaje: breakdown.junaebPct,
-      color: "bg-[#00A650]",
-      barColor: "bg-emerald-500",
-      badge: "Subsidio Duoc",
+      id: "webpay",
+      name: "Webpay Plus (Transbank)",
+      sub: "Tarjetas Débito Redcompra y Crédito bancarias",
+      monto: breakdown.webpayMonto,
+      porcentaje: breakdown.webpayPct,
+      color: "bg-[#E11938]",
+      barColor: "bg-rose-600",
+      badge: "Sandbox Oficial",
       icon: Wallet,
     },
     {
       id: "otros",
-      name: "Webpay / Tarjetas / MACH",
-      sub: "Tarjetas bancarias y billeteras digitales",
+      name: "Billeteras Digitales (MACH)",
+      sub: "Pagos móviles y transferencias bancarias",
       monto: breakdown.otrosMonto,
       porcentaje: breakdown.otrosPct,
-      color: "bg-[#7C3AED]",
-      barColor: "bg-purple-500",
+      color: "bg-[#6C00FF]",
+      barColor: "bg-purple-600",
       badge: "Digital",
       icon: DollarSign,
     },
@@ -158,7 +159,7 @@ export function PaymentBreakdownWidget() {
           </div>
           <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
             <span>CuentaRUT ({breakdown.bancoEstadoPct}%)</span>
-            <span>Junaeb ({breakdown.junaebPct}%)</span>
+            <span>Webpay Plus ({breakdown.webpayPct}%)</span>
             <span>Otros ({breakdown.otrosPct}%)</span>
           </div>
         </div>

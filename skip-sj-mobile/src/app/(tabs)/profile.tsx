@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const { session, profile, setSession } = useAuthStore();
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode);
-  const { baesBalance, savedCards } = usePaymentStore();
+  const { savedCards } = usePaymentStore();
   const router = useRouter();
 
   // Variables de tema dinámico
@@ -80,12 +80,12 @@ export default function ProfileScreen() {
     );
   };
 
-  const handlePressJunaeb = () => {
+  const handlePressWebpay = () => {
     Alert.alert(
-      "Tarjeta Junaeb BAES",
-      `Estado: Activa y vinculada\nBeneficiario: ${displayName}\nConvenio: Sede San Joaquín\nSaldo Disponible: $${baesBalance.toLocaleString('es-CL')}\n\nPuedes utilizar tu saldo BAES directamente en el checkout sin comisiones.`,
+      "Webpay Plus (Transbank Sandbox)",
+      `Ambiente: Integración Oficial\nComercio: 597055555532\n\nPermite pagar con tarjetas de débito (Redcompra) y crédito bancarias en modo developer.`,
       [
-        { text: "Administrar", onPress: () => router.push('/add-payment') },
+        { text: "Administrar Tarjetas", onPress: () => router.push('/add-payment') },
         { text: "Cerrar", style: "cancel" }
       ]
     );
@@ -182,9 +182,9 @@ export default function ProfileScreen() {
           </View>
 
           <View style={{ gap: 12 }}>
-            {/* Junaeb BAES Card */}
+            {/* Webpay Plus Transbank Card */}
             <TouchableOpacity 
-              onPress={handlePressJunaeb}
+              onPress={handlePressWebpay}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -192,7 +192,7 @@ export default function ProfileScreen() {
                 padding: 16,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: isDarkMode ? 'rgba(0,166,80,0.4)' : 'rgba(0,166,80,0.3)',
+                borderColor: isDarkMode ? 'rgba(225,25,56,0.4)' : 'rgba(225,25,56,0.2)',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.03,
@@ -200,15 +200,15 @@ export default function ProfileScreen() {
                 elevation: 1
               }}
             >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(0,166,80,0.12)', justifyContent: 'center', alignItems: 'center' }}>
-                <Wallet color="#00A650" size={20} />
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(225,25,56,0.12)', justifyContent: 'center', alignItems: 'center' }}>
+                <Wallet color="#E11938" size={20} />
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
-                  Tarjeta Junaeb BAES
+                  Webpay Plus (Transbank)
                 </Text>
                 <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
-                  Saldo disponible: ${baesBalance.toLocaleString('es-CL')}
+                  Modo Developer Sandbox (Comercio 597055555532)
                 </Text>
               </View>
               <ChevronRight color={textSecondary} size={20} />

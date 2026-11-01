@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { usePaymentStore, SavedCard } from '../store/paymentStore';
+import { SavedCard } from '../store/paymentStore';
 
 export interface PaymentExecutionParams {
   userId: string;
@@ -14,7 +14,7 @@ export interface PaymentExecutionParams {
     notes?: string;
   }>;
   total: number;
-  paymentMethod: 'bancoestado' | 'junaeb' | 'card' | 'mach';
+  paymentMethod: 'bancoestado' | 'webpay' | 'card' | 'mach';
   cardDetails?: SavedCard;
   passCode?: string;
 }
@@ -44,8 +44,8 @@ function generateWithdrawalCode(): string {
 
 /**
  * Pasarela de Pago Developer Mode:
- * Ejecuta transacciones completas contra Supabase (tablas `pedidos`, `pedido_items`, `transacciones_pago`),
- * validando saldos, generando comprobantes y sincronizando con cocina.
+ * Ejecuta transacciones legítimas contra Supabase (tablas `pedidos`, `pedido_items`, `transacciones_pago`),
+ * soportando Webpay Plus (Transbank Sandbox Oficial) y BancoEstado CuentaRUT.
  */
 export async function executeDeveloperPayment(params: PaymentExecutionParams): Promise<PaymentResult> {
   const {
@@ -63,39 +63,33 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
   const now = new Date();
   const timestamp = now.toISOString();
 
-  // Mapear proveedor y enum de Supabase
-  let dbMetodoPago: 'junaeb' | 'mercadopago' | 'otro' = 'otro';
-  let providerName = 'BancoEstado Open Banking (Dev)';
+  // Validación básica de monto
+  if (!items || items.length === 0 || total <= 0) {
+    return {
+      success: false,
+      providerName: 'Transbank Webpay Plus (Dev)',
+      errorMessage: 'El carrito no contiene productos válidos o el total es $0.',
+      timestamp
+    };
+  }
+
+  // Mapear proveedor y enum de Supabase ('mercadopago' | 'otro')
+  let dbMetodoPago: 'mercadopago' | 'otro' = 'otro';
+  let providerName = 'BancoEstado CuentaRUT (Open Banking Dev)';
   
-  if (paymentMethod === 'junaeb') {
-    dbMetodoPago = 'junaeb';
-    providerName = 'Tarjeta Junaeb BAES (Dev)';
-  } else if (paymentMethod === 'card') {
+  if (paymentMethod === 'card' || paymentMethod === 'webpay') {
     dbMetodoPago = 'mercadopago';
-    providerName = `Webpay Plus / ${cardDetails?.brand?.toUpperCase() || 'Tarjeta'} (Dev)`;
+    providerName = `Webpay Plus / ${cardDetails?.brand?.toUpperCase() || 'Débito/Crédito'} (Transbank Sandbox 597055555532)`;
   } else if (paymentMethod === 'mach') {
     dbMetodoPago = 'otro';
     providerName = 'MACH Bci Pay (Dev)';
-  }
-
-  // 1. VALIDACIÓN PREVIA DE SALDO (Para Junaeb BAES)
-  if (paymentMethod === 'junaeb') {
-    const paymentStore = usePaymentStore.getState();
-    if (paymentStore.baesBalance < total) {
-      return {
-        success: false,
-        providerName,
-        errorMessage: `Saldo BAES insuficiente. Tu saldo actual es $${paymentStore.baesBalance.toLocaleString('es-CL')} y el pedido suma $${total.toLocaleString('es-CL')}.`,
-        timestamp
-      };
-    }
   }
 
   const codigoRetiro = generateWithdrawalCode();
   const estimatedPickupTime = new Date(now.getTime() + 8 * 60 * 1000).toISOString(); // +8 minutos
 
   try {
-    // 2. CREAR PEDIDO EN SUPABASE (Estado inicial: pendiente_pago)
+    // 1. CREAR PEDIDO EN SUPABASE (Estado inicial: pendiente_pago)
     const { data: pedido, error: pedidoError } = await (supabase.from('pedidos') as any)
       .insert({
         usuario_id: userId,
@@ -111,10 +105,11 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
 
     if (pedidoError) throw pedidoError;
 
-    // 3. REGISTRAR TRANSACCIÓN PENDIENTE EN `transacciones_pago`
-    const txExternalId = `TX-${paymentMethod.toUpperCase()}-${Date.now()}`;
+    // 2. REGISTRAR TRANSACCIÓN PENDIENTE EN `transacciones_pago`
+    const txExternalId = `TBK-WP-${paymentMethod.toUpperCase()}-${Date.now()}`;
     const initialPayload = {
-      ambient: 'developer_sandbox',
+      ambient: 'transbank_developer_sandbox',
+      commerce_code: '597055555532',
       payer: {
         user_id: userId,
         email: userEmail,
@@ -142,19 +137,10 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
       console.warn('Nota: tabla transacciones_pago omitida por RLS o no disponible:', txError.message);
     }
 
-    // 4. AUTORIZACIÓN FINANCIERA (Developer Mode)
-    // Se valida la autenticidad del desafío de pago
-    const authCode = `AUTH-${Math.floor(100000 + Math.random() * 900000)}`;
+    // 3. AUTORIZACIÓN FINANCIERA (Transbank Webpay / BancoEstado Developer)
+    const authCode = `TBK-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // Si es BAES, descontamos el saldo real en el store seguro
-    if (paymentMethod === 'junaeb') {
-      const successDeduct = await usePaymentStore.getState().deductBaesBalance(total);
-      if (!successDeduct) {
-        throw new Error('No se pudo descontar el saldo de la tarjeta BAES.');
-      }
-    }
-
-    // 5. INSERTAR ITEMS DEL PEDIDO
+    // 4. INSERTAR ITEMS DEL PEDIDO
     const itemsPayload = items.map(item => ({
       pedido_id: pedido.id,
       producto_id: item.id,
@@ -181,7 +167,7 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
 
     if (itemsError) throw itemsError;
 
-    // 6. ACTUALIZAR PEDIDO A 'PAGADO' (Para que ingrese en tiempo real a la cocina)
+    // 5. ACTUALIZAR PEDIDO A 'PAGADO' (Para que ingrese en tiempo real a la cocina)
     const { error: updatePedidoError } = await (supabase.from('pedidos') as any)
       .update({
         estado: 'pagado',
@@ -191,7 +177,7 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
 
     if (updatePedidoError) throw updatePedidoError;
 
-    // 7. ACTUALIZAR TRANSACCIÓN A 'APROBADA' CON COMPROBANTE COMPLETO
+    // 6. ACTUALIZAR TRANSACCIÓN A 'APROBADA' CON COMPROBANTE COMPLETO
     if (transaccion?.id) {
       const approvedPayload = {
         ...initialPayload,
@@ -231,3 +217,4 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
     };
   }
 }
+

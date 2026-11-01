@@ -14,8 +14,7 @@ export interface SavedCard {
 
 interface PaymentState {
   savedCards: SavedCard[];
-  baesBalance: number;
-  selectedPaymentMethod: 'bancoestado' | 'junaeb' | 'card' | 'mach';
+  selectedPaymentMethod: 'bancoestado' | 'card' | 'mach';
   selectedCardId: string | null;
   isLoading: boolean;
   
@@ -24,18 +23,13 @@ interface PaymentState {
   addCard: (card: Omit<SavedCard, 'id' | 'createdAt' | 'isDefault'>) => Promise<SavedCard>;
   removeCard: (id: string) => Promise<void>;
   setDefaultCard: (id: string) => Promise<void>;
-  setSelectedPaymentMethod: (method: 'bancoestado' | 'junaeb' | 'card' | 'mach', cardId?: string) => void;
-  deductBaesBalance: (amount: number) => Promise<boolean>;
-  rechargeBaesBalance: (amount: number) => Promise<void>;
+  setSelectedPaymentMethod: (method: 'bancoestado' | 'card' | 'mach', cardId?: string) => void;
 }
 
 const CARDS_STORAGE_KEY = 'skip_sj_saved_cards';
-const BAES_STORAGE_KEY = 'skip_sj_baes_balance';
-const INITIAL_BAES_BALANCE = 42500; // Saldo de beneficio institucional Duoc UC
 
 export const usePaymentStore = create<PaymentState>((set, get) => ({
   savedCards: [],
-  baesBalance: INITIAL_BAES_BALANCE,
   selectedPaymentMethod: 'bancoestado',
   selectedCardId: null,
   isLoading: true,
@@ -51,14 +45,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         if (defaultCard) {
           set({ selectedCardId: defaultCard.id });
         }
-      }
-
-      // 2. Cargar saldo BAES
-      const storedBalance = await SecureStore.getItemAsync(BAES_STORAGE_KEY);
-      if (storedBalance !== null) {
-        set({ baesBalance: parseInt(storedBalance, 10) });
-      } else {
-        await SecureStore.setItemAsync(BAES_STORAGE_KEY, String(INITIAL_BAES_BALANCE));
       }
     } catch (e) {
       console.error('Error cargando datos de pago seguros:', e);
@@ -117,24 +103,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       ...(cardId ? { selectedCardId: cardId } : {})
     });
   },
-
-  deductBaesBalance: async (amount: number) => {
-    const current = get().baesBalance;
-    if (current < amount) {
-      return false; // Fondos insuficientes
-    }
-    const next = current - amount;
-    set({ baesBalance: next });
-    await SecureStore.setItemAsync(BAES_STORAGE_KEY, String(next));
-    return true;
-  },
-
-  rechargeBaesBalance: async (amount: number) => {
-    const next = get().baesBalance + amount;
-    set({ baesBalance: next });
-    await SecureStore.setItemAsync(BAES_STORAGE_KEY, String(next));
-  }
 }));
 
 // Auto-cargar en inicialización
 usePaymentStore.getState().loadPaymentData();
+

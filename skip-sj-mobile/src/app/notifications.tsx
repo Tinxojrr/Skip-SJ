@@ -114,10 +114,10 @@ export default function NotificationsScreen() {
 
       // 2. Notificaciones promocionales institucionales de Duoc UC
       notifsList.push({
-        id: 'promo-junaeb-1',
+        id: 'promo-webpay-1',
         tipo: 'promo_activa',
-        titulo: 'Beneficio BAES habilitado 🥗',
-        mensaje: 'Aceptamos Tarjeta Junaeb Sodexo / Edenred en Casino Central San Joaquín.',
+        titulo: 'Pago Rápido con CuentaRUT & Webpay 💳',
+        mensaje: 'Paga al instante sin filas en Casino San Joaquín usando tu CuentaRUT o tarjetas de débito/crédito.',
         created_at: new Date(Date.now() - 3600000 * 2).toISOString()
       });
 
