@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -6,14 +6,14 @@ import {
   ScrollView, 
   Alert, 
   Modal, 
-  ActivityIndicator,
-  Platform 
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
-import { supabase } from '../../lib/supabase';
+import { usePaymentStore, SavedCard } from '../../store/paymentStore';
+import { executeDeveloperPayment, PaymentResult } from '../../services/paymentGateway';
 import { useRouter } from 'expo-router';
 import { 
   Minus, 
@@ -29,11 +29,13 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   ArrowRight,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  Wallet
 } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 
-interface Banco {
+export interface PaymentOption {
   id: string;
   nombre: string;
   tipoCuenta: string;
@@ -42,9 +44,11 @@ interface Banco {
   colorSecundario: string;
   badge?: string;
   passNombre: string;
+  isCard?: boolean;
+  isJunaeb?: boolean;
 }
 
-const BANCOS_CHILE: Banco[] = [
+const BASE_BANCOS: PaymentOption[] = [
   {
     id: 'bancoestado',
     nombre: 'BancoEstado',
@@ -52,7 +56,7 @@ const BANCOS_CHILE: Banco[] = [
     sigla: 'BE',
     colorBg: '#004B93',
     colorSecundario: '#F58220',
-    badge: 'Más usado en Duoc',
+    badge: 'Open Banking Duoc',
     passNombre: 'Clave Pass'
   },
   {
@@ -110,16 +114,60 @@ export default function CartScreen() {
   const textPrimary = isDarkMode ? '#F4F4F5' : '#111111';
   const textSecondary = isDarkMode ? '#A1A1AA' : 'rgba(17,17,17,0.5)';
   const borderColor = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(17,17,17,0.05)';
+  
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { session, profile } = useAuthStore();
+  const { savedCards, baesBalance } = usePaymentStore();
   const router = useRouter();
 
-  // Estados de Pasarela Bancaria
-  const [bancoSeleccionado, setBancoSeleccionado] = useState<Banco>(BANCOS_CHILE[0]);
+  // Opciones completas de pago (Junaeb BAES + BancoEstado + Tarjetas Guardadas + Otros Bancos)
+  const paymentOptions = useMemo<PaymentOption[]>(() => {
+    const list: PaymentOption[] = [];
+
+    // 1. Tarjeta Junaeb BAES (Con saldo dinámico real)
+    list.push({
+      id: 'junaeb',
+      nombre: 'Tarjeta Junaeb BAES',
+      tipoCuenta: `Saldo: $${baesBalance.toLocaleString('es-CL')}`,
+      sigla: 'BAES',
+      colorBg: '#00A650',
+      colorSecundario: '#047857',
+      badge: 'Subsidio Duoc',
+      passNombre: 'Clave Edenred / Sodexo',
+      isJunaeb: true
+    });
+
+    // 2. BancoEstado CuentaRUT
+    list.push(BASE_BANCOS[0]);
+
+    // 3. Tarjetas guardadas por el alumno
+    savedCards.forEach(c => {
+      list.push({
+        id: c.id,
+        nombre: `${c.brand.toUpperCase()} ${c.cardLast4}`,
+        tipoCuenta: `Vence ${c.expiry} • ${c.cardName}`,
+        sigla: c.brand === 'visa' ? 'VISA' : 'MC',
+        colorBg: c.brand === 'visa' ? '#1D4ED8' : '#EA580C',
+        colorSecundario: '#1E293B',
+        badge: 'Guardada',
+        passNombre: 'CVV Seguro',
+        isCard: true
+      });
+    });
+
+    // 4. Otros bancos chilenos
+    BASE_BANCOS.slice(1).forEach(b => list.push(b));
+
+    return list;
+  }, [savedCards, baesBalance]);
+
+  // Estados de Pasarela
+  const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(paymentOptions[0] || BASE_BANCOS[0]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalStep, setModalStep] = useState<'seleccionar_banco' | 'confirmar' | 'procesando' | 'exito'>('confirmar');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [codigoRetiroGenerado, setCodigoRetiroGenerado] = useState<string>('');
+  const [comprobantePago, setComprobantePago] = useState<PaymentResult | null>(null);
   const [passCode, setPassCode] = useState('••••');
 
   const subtotal = getTotal();
@@ -140,64 +188,55 @@ export default function CartScreen() {
     setModalVisible(true);
   };
 
-  // Ejecutar Transferencia Bancaria Directa
+  // Ejecutar Pago Developer Real (Integrado a Supabase y pasarela)
   const autorizarTransferencia = async () => {
+    if (!session?.user) {
+      Alert.alert('Sesión Requerida', 'Por favor inicia sesión con tu correo institucional.');
+      return;
+    }
+
     setIsCheckingOut(true);
     setModalStep('procesando');
 
     try {
-      // 1. Handshake bancario Open Banking (1.3 seg)
-      await new Promise(resolve => setTimeout(resolve, 1300));
+      const paymentMethodType = 
+        bancoSeleccionado.isJunaeb ? 'junaeb' :
+        bancoSeleccionado.isCard ? 'card' :
+        bancoSeleccionado.id === 'mach' ? 'mach' : 'bancoestado';
 
-      const codigoRetiro = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const selectedCardData = savedCards.find(c => c.id === bancoSeleccionado.id);
 
-      // 2. Insertar Pedido en Supabase
-      const { data: pedido, error: pedidoError } = await (supabase.from('pedidos') as any).insert({
-        usuario_id: session!.user.id,
-        locatario_id: items[0].storeId || null,
-        estado: 'pagado',
-        monto_total: total,
-        codigo_retiro: codigoRetiro
-      }).select().single();
+      // Ejecución legítima con base de datos Supabase
+      const result = await executeDeveloperPayment({
+        userId: session.user.id,
+        userEmail: session.user.email || 'alumno@duocuc.cl',
+        userRut: profile?.rut || '20.481.923-K',
+        storeId: items[0]?.storeId,
+        items: items.map(i => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          notes: i.notes
+        })),
+        total,
+        paymentMethod: paymentMethodType,
+        cardDetails: selectedCardData,
+        passCode
+      });
 
-      if (pedidoError) throw pedidoError;
-
-      // 3. Insertar Items del Pedido (incluyendo notas personalizadas si existen)
-      const itemsPayload = items.map(item => ({
-        pedido_id: pedido.id,
-        producto_id: item.id,
-        cantidad: item.quantity,
-        precio_unitario: item.price,
-        subtotal: item.price * item.quantity,
-        notas: item.notes || null
-      }));
-
-      let { error: itemsError } = await (supabase.from('pedido_items') as any).insert(itemsPayload);
-
-      // Si la base de datos aún no tiene la columna 'notas', reintentamos sin ella para no romper la compra
-      if (itemsError && (itemsError.message?.includes('notas') || itemsError.message?.includes('column'))) {
-        console.warn('Columna notas aún no presente en pedido_items, guardando items estándar...');
-        const fallbackPayload = items.map(item => ({
-          pedido_id: pedido.id,
-          producto_id: item.id,
-          cantidad: item.quantity,
-          precio_unitario: item.price,
-          subtotal: item.price * item.quantity
-        }));
-        const retry = await (supabase.from('pedido_items') as any).insert(fallbackPayload);
-        itemsError = retry.error;
+      if (!result.success) {
+        throw new Error(result.errorMessage || 'Transacción denegada por la entidad financiera.');
       }
 
-      if (itemsError) throw itemsError;
-
-      // 4. Limpiar carrito y pasar a pantalla de éxito
-      setCodigoRetiroGenerado(codigoRetiro);
+      setCodigoRetiroGenerado(result.codigoRetiro || 'SJ-401');
+      setComprobantePago(result);
       clearCart();
       setModalStep('exito');
 
-    } catch (error) {
-      console.error('Error al procesar transferencia:', error);
-      Alert.alert('Error Bancario', 'No pudimos verificar la transferencia con tu banco. Por favor intenta de nuevo.');
+    } catch (error: any) {
+      console.error('Error al procesar pago:', error);
+      Alert.alert('Pago No Autorizado', error.message || 'No se pudo procesar la transacción bancaria.');
       setModalStep('confirmar');
     } finally {
       setIsCheckingOut(false);
@@ -209,6 +248,7 @@ export default function CartScreen() {
     setModalVisible(false);
     setModalStep('confirmar');
     setCodigoRetiroGenerado('');
+    setComprobantePago(null);
     router.push('/history');
   };
 
@@ -217,8 +257,8 @@ export default function CartScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
-          <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,61,122,0.05)', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
-            <ShoppingCart color="#003D7A" size={48} opacity={0.5} />
+          <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(242,169,0,0.08)', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+            <ShoppingCart color="#F2A900" size={48} opacity={0.8} />
           </View>
           <Text style={{ fontSize: 24, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 8, textAlign: 'center' }}>
             Tu carrito está vacío
@@ -227,11 +267,11 @@ export default function CartScreen() {
             ¡Es hora de un break! Explora los locales y pide algo rico.
           </Text>
           
-          <TouchableOpacity 
-            onPress={() => router.push('/')}
-            style={{ backgroundColor: '#FFBF00', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, shadowColor: '#FFBF00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8 }}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)')}
+            style={{ backgroundColor: '#F2A900', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 16, shadowColor: '#F2A900', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }}
           >
-            <Text style={{ color: '#111111', fontFamily: 'Inter-Bold', fontSize: 16 }}>Explorar locales</Text>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 16, color: '#111111' }}>Explorar locales</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -336,7 +376,7 @@ export default function CartScreen() {
           </View>
         </Animated.View>
 
-        {/* Medio de Pago Seleccionado (Open Banking / Banco) */}
+        {/* Medio de Pago Seleccionado */}
         <Animated.View entering={FadeIn.delay(400)} style={{ marginTop: 24, marginBottom: 120 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -344,7 +384,7 @@ export default function CartScreen() {
               <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary }}>Método de Pago</Text>
             </View>
             <TouchableOpacity onPress={cambiarBanco}>
-              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#F2A900' : '#004B93' }}>Cambiar banco</Text>
+              <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: isDarkMode ? '#F2A900' : '#004B93' }}>Cambiar método</Text>
             </TouchableOpacity>
           </View>
 
@@ -375,9 +415,15 @@ export default function CartScreen() {
               alignItems: 'center', 
               marginRight: 16 
             }}>
-              <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 14 }}>
-                {bancoSeleccionado.sigla}
-              </Text>
+              {bancoSeleccionado.isJunaeb ? (
+                <Wallet color="#FFFFFF" size={20} />
+              ) : bancoSeleccionado.isCard ? (
+                <CreditCard color="#FFFFFF" size={20} />
+              ) : (
+                <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 14 }}>
+                  {bancoSeleccionado.sigla}
+                </Text>
+              )}
             </View>
 
             <View style={{ flex: 1 }}>
@@ -394,7 +440,7 @@ export default function CartScreen() {
                 )}
               </View>
               <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, marginTop: 2 }}>
-                {bancoSeleccionado.tipoCuenta} • RUT {profile?.rut || '20.481.923-K'}
+                {bancoSeleccionado.tipoCuenta}
               </Text>
             </View>
 
@@ -404,7 +450,7 @@ export default function CartScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 6 }}>
             <Lock size={12} color="#10B981" />
             <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#10B981' }}>
-              Transferencia automática instantánea • Cero comisiones
+              Transacción bancaria directa • Cero comisiones POS
             </Text>
           </View>
         </Animated.View>
@@ -442,9 +488,7 @@ export default function CartScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ========================================================= */}
-      {/* MODAL DE PASARELA BANCARIA RÁPIDA (Estilo Fintoc / Banco) */}
-      {/* ========================================================= */}
+      {/* MODAL DE PASARELA BANCARIA DEVELOPER MODE */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -467,30 +511,30 @@ export default function CartScreen() {
             maxHeight: '90%'
           }}>
 
-            {/* PANTALLA 1: SELECCIONAR BANCO */}
+            {/* PANTALLA 1: SELECCIONAR MÉTODO */}
             {modalStep === 'seleccionar_banco' && (
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: textPrimary }}>
-                    Selecciona tu Banco
+                    Selecciona Medio de Pago
                   </Text>
                   <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
                     <X size={20} color={textSecondary} />
                   </TouchableOpacity>
                 </View>
                 <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, marginBottom: 20 }}>
-                  Conexión directa vía Open Banking Duoc UC sin comisiones
+                  Pasarela directa para alumnos de Duoc UC Sede San Joaquín
                 </Text>
 
                 <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
                   <View style={{ gap: 10 }}>
-                    {BANCOS_CHILE.map((banco) => {
-                      const isSelected = banco.id === bancoSeleccionado.id;
+                    {paymentOptions.map((opt) => {
+                      const isSelected = opt.id === bancoSeleccionado.id;
                       return (
                         <TouchableOpacity
-                          key={banco.id}
+                          key={opt.id}
                           onPress={() => {
-                            setBancoSeleccionado(banco);
+                            setBancoSeleccionado(opt);
                             setModalStep('confirmar');
                           }}
                           style={{
@@ -500,42 +544,48 @@ export default function CartScreen() {
                             borderRadius: 16,
                             backgroundColor: isSelected ? (isDarkMode ? '#1E293B' : '#F0F9FF') : (isDarkMode ? '#27272A' : '#F9FAFB'),
                             borderWidth: 1.5,
-                            borderColor: isSelected ? banco.colorBg : borderColor
+                            borderColor: isSelected ? opt.colorBg : borderColor
                           }}
                         >
                           <View style={{ 
                             width: 38, 
                             height: 38, 
                             borderRadius: 10, 
-                            backgroundColor: banco.colorBg, 
+                            backgroundColor: opt.colorBg, 
                             justifyContent: 'center', 
                             alignItems: 'center', 
                             marginRight: 14 
                           }}>
-                            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 13 }}>
-                              {banco.sigla}
-                            </Text>
+                            {opt.isJunaeb ? (
+                              <Wallet color="#FFFFFF" size={18} />
+                            ) : opt.isCard ? (
+                              <CreditCard color="#FFFFFF" size={18} />
+                            ) : (
+                              <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 13 }}>
+                                {opt.sigla}
+                              </Text>
+                            )}
                           </View>
 
                           <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                               <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>
-                                {banco.nombre}
+                                {opt.nombre}
                               </Text>
-                              {banco.badge && (
+                              {opt.badge && (
                                 <View style={{ backgroundColor: isDarkMode ? '#1E3A8A' : '#DBEAFE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
                                   <Text style={{ fontSize: 9, fontFamily: 'Inter-Bold', color: isDarkMode ? '#93C5FD' : '#1E40AF' }}>
-                                    {banco.badge}
+                                    {opt.badge}
                                   </Text>
                                 </View>
                               )}
                             </View>
                             <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: textSecondary }}>
-                              {banco.tipoCuenta}
+                              {opt.tipoCuenta}
                             </Text>
                           </View>
 
-                          <ChevronRight size={18} color={isSelected ? banco.colorBg : textSecondary} />
+                          <ChevronRight size={18} color={isSelected ? opt.colorBg : textSecondary} />
                         </TouchableOpacity>
                       );
                     })}
@@ -552,7 +602,7 @@ export default function CartScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <ShieldCheck size={18} color="#10B981" />
                     <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#10B981' }}>
-                      Pasarela Cifrada 256-bit
+                      Pasarela Cifrada 256-bit • Ambiente Developer
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
@@ -560,7 +610,7 @@ export default function CartScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Tarjeta del Banco del Alumno */}
+                {/* Tarjeta del Medio de Pago */}
                 <View style={{ 
                   backgroundColor: bancoSeleccionado.colorBg, 
                   borderRadius: 18, 
@@ -584,7 +634,7 @@ export default function CartScreen() {
                   </View>
 
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: 'Inter-Regular' }}>
-                    Titular / RUT Registrado
+                    Titular / Alumno Registrado
                   </Text>
                   <Text style={{ color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter-Bold', marginTop: 2 }}>
                     {profile ? `${profile.p_nombre || 'Alumno'} ${profile.apellido_p || ''}` : 'Alumno Duoc UC'} • {profile?.rut || '20.481.923-K'}
@@ -603,14 +653,14 @@ export default function CartScreen() {
                   </View>
                   <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a transferir:</Text>
+                    <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a pagar:</Text>
                     <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : bancoSeleccionado.colorBg }}>
                       ${total.toLocaleString('es-CL')} CLP
                     </Text>
                   </View>
                 </View>
 
-                {/* Métodos de Autorización Rápida */}
+                {/* Métodos de Autorización */}
                 <View style={{ marginBottom: 20 }}>
                   <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: textSecondary, marginBottom: 8 }}>
                     Autorización con {bancoSeleccionado.passNombre}:
@@ -664,13 +714,13 @@ export default function CartScreen() {
                   style={{ marginTop: 12, alignItems: 'center', paddingVertical: 4 }}
                 >
                   <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: textSecondary }}>
-                    Usar otro banco o billetera
+                    Usar otro método de pago
                   </Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* PANTALLA 3: PROCESANDO TRANSFERENCIA */}
+            {/* PANTALLA 3: PROCESANDO */}
             {modalStep === 'procesando' && (
               <View style={{ paddingVertical: 30, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ 
@@ -689,7 +739,7 @@ export default function CartScreen() {
                   Conectando con {bancoSeleccionado.nombre}...
                 </Text>
                 <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, textAlign: 'center', maxWidth: 280, lineHeight: 18 }}>
-                  Verificando fondos de CuentaRUT y enviando comanda a la cocina de {storeName}...
+                  Registrando comanda y verificando autorización en base de datos de {storeName}...
                 </Text>
               </View>
             )}
@@ -697,7 +747,7 @@ export default function CartScreen() {
             {/* PANTALLA 4: ÉXITO TOTAL & CÓDIGO DE RETIRO */}
             {modalStep === 'exito' && (
               <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-                {/* Check verde animado */}
+                {/* Check verde */}
                 <View style={{ 
                   width: 70, 
                   height: 70, 
@@ -714,7 +764,7 @@ export default function CartScreen() {
                   ¡Pago Confirmado!
                 </Text>
                 <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary, textAlign: 'center', marginBottom: 20 }}>
-                  Transferencia exitosa desde {bancoSeleccionado.nombre}
+                  Transacción exitosa procesada vía {bancoSeleccionado.nombre}
                 </Text>
 
                 {/* CAJA CÓDIGO DE RETIRO GRANDE */}
@@ -749,8 +799,14 @@ export default function CartScreen() {
                   </View>
 
                   <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>
-                    Dicta o muestra este código en el mesón de {storeName}
+                    Dicta este código en el mesón de {storeName} para retirar
                   </Text>
+
+                  {comprobantePago?.authorizationCode && (
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Regular', color: '#64748B', marginTop: 6, fontStyle: 'italic' }}>
+                      Autorización: {comprobantePago.authorizationCode} • ID: {comprobantePago.transactionId}
+                    </Text>
+                  )}
                 </View>
 
                 {/* Notificación de Cocina */}

@@ -472,9 +472,22 @@ export default function HomeScreen() {
                       <View style={{ backgroundColor: isDarkMode ? 'rgba(242,169,0,0.18)' : 'rgba(242,169,0,0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 }}>
                         <Text style={{ color: isDarkMode ? '#F2A900' : '#000000', fontSize: 15, fontFamily: 'Inter-Bold' }}>${product.precio}</Text>
                       </View>
-                      <View style={{ backgroundColor: isDarkMode ? '#27272A' : '#111111', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}>
+                      <TouchableOpacity 
+                        onPress={(e) => {
+                          e.stopPropagation?.();
+                          addItem({
+                            id: product.id,
+                            name: product.nombre_producto,
+                            price: product.precio,
+                            quantity: 1,
+                            storeId: product.locatario_id,
+                            storeName: product.locatarios?.nombre || 'Local'
+                          });
+                        }}
+                        style={{ backgroundColor: isDarkMode ? '#27272A' : '#111111', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }}
+                      >
                         <Plus color="#F2A900" size={20} />
-                      </View>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </TouchableOpacity>

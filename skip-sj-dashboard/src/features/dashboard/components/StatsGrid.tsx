@@ -18,27 +18,41 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
   const { locatarioId, role } = useAuth();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
-    ingresosTotales: 418500,
-    pedidosActivos: 4,
-    pedidosCompletados: 42,
-    ticketPromedio: 3850,
-    tiempoPromedioMin: 6.4,
-    horaPico: "12:45 - 13:45",
-    porcentajeBancoEstado: 58,
-    porcentajeJunaeb: 32,
-    comparativaPorcentaje: 14.8,
+    ingresosTotales: 0,
+    pedidosActivos: 0,
+    pedidosCompletados: 0,
+    ticketPromedio: 0,
+    tiempoPromedioMin: 0,
+    horaPico: "Sin registros",
+    porcentajeBancoEstado: 0,
+    porcentajeJunaeb: 0,
+    comparativaPorcentaje: 0,
   });
 
   const fetchMetrics = useCallback(async () => {
     try {
-      let query = supabase.from("pedidos").select("monto_total, estado, created_at");
+      setLoading(true);
+      const now = new Date();
+      let startDate = new Date();
+      if (periodo === "hoy") {
+        startDate.setHours(0, 0, 0, 0);
+      } else if (periodo === "semana") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (periodo === "mes") {
+        startDate.setDate(now.getDate() - 30);
+      }
+
+      let query = supabase
+        .from("pedidos")
+        .select("monto_total, estado, metodo_pago, created_at, updated_at")
+        .gte("created_at", startDate.toISOString());
 
       if (role !== "super_admin" && locatarioId) {
         query = query.eq("locatario_id", locatarioId);
       }
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         const validOrders = data.filter(
           (p) => p.estado !== "cancelado" && p.estado !== "pendiente_pago"
         );
@@ -47,35 +61,70 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
           ["pagado", "en_preparacion", "listo_retiro"].includes(p.estado)
         ).length;
         const completados = data.filter((p) => p.estado === "completado").length;
-        const promedio = validOrders.length > 0 ? Math.round(ingresos / validOrders.length) : 3850;
+        const promedio = validOrders.length > 0 ? Math.round(ingresos / validOrders.length) : 0;
 
-        // Multiplicador por período
-        const factor = periodo === "mes" ? 18 : periodo === "semana" ? 5.2 : 1;
+        // Calcular tiempo de preparación promedio en completados
+        const completedWithTimes = data.filter(
+          (p) => p.estado === "completado" && p.updated_at && p.created_at
+        );
+        let avgMinutes = 0;
+        if (completedWithTimes.length > 0) {
+          const totalDiffMs = completedWithTimes.reduce((acc, p) => {
+            const diff = new Date(p.updated_at).getTime() - new Date(p.created_at).getTime();
+            return acc + (diff > 0 ? diff : 0);
+          }, 0);
+          avgMinutes = Math.round((totalDiffMs / completedWithTimes.length / 60000) * 10) / 10;
+        }
+
+        // Calcular hora pico
+        const hoursMap: { [hour: number]: number } = {};
+        validOrders.forEach((p) => {
+          const hour = new Date(p.created_at).getHours();
+          hoursMap[hour] = (hoursMap[hour] || 0) + 1;
+        });
+
+        let peakHourStr = "Sin registros";
+        let maxCount = 0;
+        for (const [hour, count] of Object.entries(hoursMap)) {
+          if (count > maxCount) {
+            maxCount = count;
+            const h = parseInt(hour, 10);
+            peakHourStr = `${h.toString().padStart(2, "0")}:00 - ${(h + 1).toString().padStart(2, "0")}:00`;
+          }
+        }
+
+        // Calcular porcentajes de método de pago
+        const totalPagados = validOrders.length;
+        const junaebCount = validOrders.filter((p) => p.metodo_pago === "junaeb").length;
+        const bancoEstadoCount = validOrders.filter(
+          (p) => p.metodo_pago === "otro" || p.metodo_pago === "mercadopago"
+        ).length;
+
+        const pctJunaeb = totalPagados > 0 ? Math.round((junaebCount / totalPagados) * 100) : 0;
+        const pctBanco = totalPagados > 0 ? Math.round((bancoEstadoCount / totalPagados) * 100) : 0;
 
         setMetrics({
-          ingresosTotales: Math.round(ingresos * factor) || 418500 * factor,
-          pedidosActivos: activos || 4,
-          pedidosCompletados: Math.round(completados * factor) || Math.round(42 * factor),
+          ingresosTotales: ingresos,
+          pedidosActivos: activos,
+          pedidosCompletados: completados,
           ticketPromedio: promedio,
-          tiempoPromedioMin: 6.4,
-          horaPico: "12:45 - 13:45",
-          porcentajeBancoEstado: 58,
-          porcentajeJunaeb: 32,
-          comparativaPorcentaje: 14.8,
+          tiempoPromedioMin: avgMinutes,
+          horaPico: peakHourStr,
+          porcentajeBancoEstado: pctBanco,
+          porcentajeJunaeb: pctJunaeb,
+          comparativaPorcentaje: validOrders.length > 0 ? 100 : 0,
         });
       } else {
-        // Fallback enriquecido de la sede San Joaquín según período
-        const factor = periodo === "mes" ? 18 : periodo === "semana" ? 5.2 : 1;
         setMetrics({
-          ingresosTotales: Math.round(418500 * factor),
-          pedidosActivos: 4,
-          pedidosCompletados: Math.round(42 * factor),
-          ticketPromedio: 3850,
-          tiempoPromedioMin: 6.4,
-          horaPico: "12:45 - 13:45",
-          porcentajeBancoEstado: 58,
-          porcentajeJunaeb: 32,
-          comparativaPorcentaje: 14.8,
+          ingresosTotales: 0,
+          pedidosActivos: 0,
+          pedidosCompletados: 0,
+          ticketPromedio: 0,
+          tiempoPromedioMin: 0,
+          horaPico: "Sin registros",
+          porcentajeBancoEstado: 0,
+          porcentajeJunaeb: 0,
+          comparativaPorcentaje: 0,
         });
       }
     } catch (err) {
@@ -108,9 +157,9 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
     {
       title: periodo === "hoy" ? "Ingresos de Hoy" : periodo === "semana" ? "Ventas Semanales" : "Ventas del Mes",
       value: `$${metrics.ingresosTotales.toLocaleString("es-CL")}`,
-      badgeText: `+${metrics.comparativaPorcentaje}%`,
+      badgeText: metrics.ingresosTotales > 0 ? "En vivo" : "Sin ventas",
       badgeColor: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20",
-      subtext: "vs. período anterior",
+      subtext: "Recaudación del período",
       icon: DollarSign,
       iconColor: "text-emerald-600 dark:text-emerald-400",
       iconBg: "bg-emerald-100/80 dark:bg-emerald-500/15 border border-emerald-300/60 dark:border-emerald-500/30",
@@ -120,7 +169,7 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
       value: `${metrics.pedidosActivos} activas`,
       badgeText: `${metrics.pedidosCompletados} entregadas`,
       badgeColor: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20",
-      subtext: "En mesón o preparándose",
+      subtext: "En preparación o retiro",
       icon: Clock,
       iconColor: "text-amber-600 dark:text-amber-400",
       iconBg: "bg-amber-100/80 dark:bg-amber-500/15 border border-amber-300/60 dark:border-amber-500/30",
@@ -128,29 +177,29 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
     {
       title: "Ticket Promedio",
       value: `$${metrics.ticketPromedio.toLocaleString("es-CL")}`,
-      badgeText: "Óptimo",
+      badgeText: metrics.ticketPromedio > 0 ? "Real" : "Sin datos",
       badgeColor: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20",
-      subtext: "Gasto promedio por estudiante",
+      subtext: "Gasto promedio por comanda",
       icon: TrendingUp,
       iconColor: "text-purple-600 dark:text-purple-400",
       iconBg: "bg-purple-100/80 dark:bg-purple-500/15 border border-purple-300/60 dark:border-purple-500/30",
     },
     {
       title: "SLA / Tiempo Entrega",
-      value: `${metrics.tiempoPromedioMin} min`,
-      badgeText: "Meta < 8 min",
+      value: metrics.tiempoPromedioMin > 0 ? `${metrics.tiempoPromedioMin} min` : "N/A",
+      badgeText: metrics.tiempoPromedioMin > 0 && metrics.tiempoPromedioMin <= 10 ? "Óptimo" : "En curso",
       badgeColor: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20",
-      subtext: "Ritmo de cocina rápido",
+      subtext: "Promedio preparación mesón",
       icon: CheckCircle2,
       iconColor: "text-blue-600 dark:text-blue-400",
       iconBg: "bg-blue-100/80 dark:bg-blue-500/15 border border-blue-300/60 dark:border-blue-500/30",
     },
     {
-      title: "Hora Punta en Casino",
+      title: "Hora Punta",
       value: metrics.horaPico,
-      badgeText: "Pico 38%",
+      badgeText: metrics.horaPico !== "Sin registros" ? "Mayor flujo" : "En espera",
       badgeColor: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20",
-      subtext: "Mayor afluencia de recreo",
+      subtext: "Horario de mayor demanda",
       icon: Flame,
       iconColor: "text-rose-600 dark:text-rose-400",
       iconBg: "bg-rose-100/80 dark:bg-rose-500/15 border border-rose-300/60 dark:border-rose-500/30",
@@ -160,7 +209,7 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
       value: `${metrics.porcentajeBancoEstado + metrics.porcentajeJunaeb}%`,
       badgeText: "Sin comisión",
       badgeColor: "bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20",
-      subtext: "Transacciones Open Banking",
+      subtext: "Transacciones directas",
       icon: CreditCard,
       iconColor: "text-teal-600 dark:text-teal-400",
       iconBg: "bg-teal-100/80 dark:bg-teal-500/15 border border-teal-300/60 dark:border-teal-500/30",

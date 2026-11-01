@@ -26,60 +26,14 @@ interface OrderRow {
   }[];
 }
 
-const DEFAULT_RECENT_ORDERS: OrderRow[] = [
-  {
-    id: "ord-1",
-    codigo_retiro: "SJ-401",
-    cliente_nombre: "Martin Aburto",
-    items_resumen: "2x Empanada de Pino de Horno, 1x Coca-Cola Zero",
-    monto_total: 6200,
-    estado: "en_preparacion",
-    created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "ord-2",
-    codigo_retiro: "SJ-402",
-    cliente_nombre: "Ignacio Valenzuela",
-    items_resumen: "1x Choclo Grande Premium Carne, 1x Agua Mineral",
-    monto_total: 5700,
-    estado: "listo_retiro",
-    created_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "ord-3",
-    codigo_retiro: "SJ-403",
-    cliente_nombre: "Camila Rojas",
-    items_resumen: "1x Salchipapa San Joaquín, 1x Té Lipton",
-    monto_total: 4500,
-    estado: "completado",
-    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "ord-4",
-    codigo_retiro: "SJ-404",
-    cliente_nombre: "Matías Soto",
-    items_resumen: "1x Hot Dog Italiano Clásico, 1x Papas Fritas",
-    monto_total: 4800,
-    estado: "completado",
-    created_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "ord-5",
-    codigo_retiro: "SJ-405",
-    cliente_nombre: "Fernanda Díaz",
-    items_resumen: "1x Choclo Mediano Tradicional",
-    monto_total: 3200,
-    estado: "pagado",
-    created_at: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
-  },
-];
-
 export function TableSection() {
   const { locatarioId, role } = useAuth();
-  const [orders, setOrders] = useState<OrderRow[]>(DEFAULT_RECENT_ORDERS);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchRecentOrders = useCallback(async () => {
     try {
+      setLoading(true);
       let query = supabase
         .from("pedidos")
         .select(`
@@ -109,13 +63,16 @@ export function TableSection() {
       }
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         setOrders(data as any as OrderRow[]);
       } else {
-        setOrders(DEFAULT_RECENT_ORDERS);
+        setOrders([]);
       }
     } catch (err) {
       console.error(err);
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
   }, [locatarioId, role]);
 
@@ -181,7 +138,7 @@ export function TableSection() {
   const getItemsSummary = (order: OrderRow) => {
     if (order.items_resumen) return order.items_resumen;
     const items = order.pedido_items || [];
-    if (items.length === 0) return "1x Menú del Día";
+    if (items.length === 0) return "Sin detalle registrado";
     return items
       .map((i) => `${i.cantidad}x ${i.productos?.nombre_producto || "Producto"}`)
       .join(", ");
@@ -221,37 +178,51 @@ export function TableSection() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200/70 dark:divide-zinc-800/80">
-              {orders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition"
-                >
-                  <td className="p-3.5 pl-5 font-mono">
-                    <span className="font-extrabold text-xs px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 tracking-wider">
-                      {order.codigo_retiro || `#${order.id.substring(0, 4)}`}
-                    </span>
-                  </td>
-                  <td className="p-3.5">
-                    <div className="flex items-center gap-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
-                      <User className="w-3.5 h-3.5 text-zinc-500" />
-                      <span>{getCustomerName(order)}</span>
-                    </div>
-                  </td>
-                  <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium max-w-xs truncate">
-                    {getItemsSummary(order)}
-                  </td>
-                  <td className="p-3.5 font-black font-mono text-zinc-950 dark:text-white text-xs">
-                    ${order.monto_total.toLocaleString("es-CL")}
-                  </td>
-                  <td className="p-3.5">{getStatusBadge(order.estado)}</td>
-                  <td className="p-3.5 pr-5 text-zinc-500 dark:text-zinc-400 font-mono text-xs">
-                    {new Date(order.created_at).toLocaleTimeString("es-CL", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-zinc-400 font-medium">
+                    Cargando comandas en vivo...
                   </td>
                 </tr>
-              ))}
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-zinc-400 font-medium">
+                    No hay comandas registradas en este momento.
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition"
+                  >
+                    <td className="p-3.5 pl-5 font-mono">
+                      <span className="font-extrabold text-xs px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 tracking-wider">
+                        {order.codigo_retiro || `#${order.id.substring(0, 4)}`}
+                      </span>
+                    </td>
+                    <td className="p-3.5">
+                      <div className="flex items-center gap-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
+                        <User className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>{getCustomerName(order)}</span>
+                      </div>
+                    </td>
+                    <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium max-w-xs truncate">
+                      {getItemsSummary(order)}
+                    </td>
+                    <td className="p-3.5 font-black font-mono text-zinc-950 dark:text-white text-xs">
+                      ${order.monto_total.toLocaleString("es-CL")}
+                    </td>
+                    <td className="p-3.5">{getStatusBadge(order.estado)}</td>
+                    <td className="p-3.5 pr-5 text-zinc-500 dark:text-zinc-400 font-mono text-xs">
+                      {new Date(order.created_at).toLocaleTimeString("es-CL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, CreditCard, ShieldCheck, Trash2, CheckCircle2 } from 'lucide-react-native';
 import { useThemeStore } from '../store/themeStore';
+import { usePaymentStore } from '../store/paymentStore';
 
 export default function AddPaymentScreen() {
   const router = useRouter();
-  const { isDarkMode } = useThemeStore();
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+  const { savedCards, addCard, removeCard, setDefaultCard } = usePaymentStore();
 
   const bg = isDarkMode ? '#09090B' : '#FAFAFA';
   const cardBg = isDarkMode ? '#18181B' : '#FFFFFF';
@@ -20,6 +22,7 @@ export default function AddPaymentScreen() {
   const [cardName, setCardName] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const formatCardNumber = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
@@ -36,16 +39,42 @@ export default function AddPaymentScreen() {
     }
   };
 
-  const handleSave = () => {
-    if (cardNumber.length < 19 || !cardName || expiry.length < 5 || cvv.length < 3) {
-      Alert.alert('Error', 'Por favor, completa todos los datos de la tarjeta correctamente.');
+  const handleSave = async () => {
+    if (cardNumber.length < 19 || !cardName.trim() || expiry.length < 5 || cvv.length < 3) {
+      Alert.alert('Datos Incompletos', 'Por favor completa todos los campos de la tarjeta con formato válido.');
       return;
     }
-    
+
+    setIsSaving(true);
+    try {
+      await addCard({
+        cardNumber,
+        cardLast4: cardNumber.replace(/\s/g, '').slice(-4),
+        cardName: cardName.trim(),
+        expiry,
+        brand: cardNumber.startsWith('4') ? 'visa' : cardNumber.startsWith('5') ? 'mastercard' : 'otra'
+      });
+
+      Alert.alert(
+        'Tarjeta Guardada con Éxito',
+        'Tu tarjeta ha sido vinculada y guardada de forma segura para tus pagos en la sede.',
+        [{ text: 'Aceptar', onPress: () => router.back() }]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'No se pudo guardar la tarjeta.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteCard = (id: string, last4: string) => {
     Alert.alert(
-      'Tarjeta vinculada con éxito', 
-      'Tu tarjeta ha sido registrada de forma segura para tus pedidos en el casino.',
-      [{ text: 'Aceptar', onPress: () => router.back() }]
+      'Eliminar Tarjeta',
+      `¿Deseas eliminar la tarjeta terminada en ${last4}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => removeCard(id) }
+      ]
     );
   };
 
@@ -60,24 +89,73 @@ export default function AddPaymentScreen() {
           <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, marginLeft: -8 }}>
             <ArrowLeft color={textPrimary} size={24} />
           </TouchableOpacity>
-          <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary, marginLeft: 12 }}>Agregar Tarjeta</Text>
+          <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: textPrimary, marginLeft: 12 }}>Métodos de Pago</Text>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 24 }}>
+        <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           
-          {/* Tarjeta Visual */}
+          {/* Tarjetas ya guardadas */}
+          {savedCards.length > 0 && (
+            <View style={{ marginBottom: 28 }}>
+              <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 12 }}>
+                Tus Tarjetas Guardadas
+              </Text>
+              <View style={{ gap: 10 }}>
+                {savedCards.map((c) => (
+                  <View 
+                    key={c.id}
+                    style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      backgroundColor: cardBg,
+                      padding: 14,
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <CreditCard size={20} color={c.brand === 'visa' ? '#1D4ED8' : '#EA580C'} />
+                      <View>
+                        <Text style={{ color: textPrimary, fontFamily: 'Inter-Bold', fontSize: 14 }}>
+                          {c.brand.toUpperCase()} {c.cardNumber}
+                        </Text>
+                        <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 11 }}>
+                          Vence: {c.expiry} • {c.cardName}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteCard(c.id, c.cardLast4)}
+                      style={{ padding: 6 }}
+                    >
+                      <Trash2 size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Tarjeta Visual de Previsualización */}
+          <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: textPrimary, marginBottom: 12 }}>
+            Vincular Nueva Tarjeta
+          </Text>
+
           <View style={{
             backgroundColor: isDarkMode ? '#1E293B' : '#111111',
-            borderRadius: 16,
+            borderRadius: 20,
             padding: 24,
-            height: 200,
+            height: 190,
             justifyContent: 'space-between',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 12 },
             shadowOpacity: isDarkMode ? 0.4 : 0.2,
             shadowRadius: 16,
             elevation: 8,
-            marginBottom: 32,
+            marginBottom: 24,
             borderWidth: 1,
             borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent'
           }}>
@@ -88,20 +166,20 @@ export default function AddPaymentScreen() {
             </View>
 
             <View>
-              <Text style={{ fontFamily: 'Inter-Bold', fontSize: 24, color: '#FFFFFF', letterSpacing: 2 }}>
-                {cardNumber || '**** **** **** ****'}
+              <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: '#FFFFFF', letterSpacing: 2 }}>
+                {cardNumber || '•••• •••• •••• ••••'}
               </Text>
               
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
                 <View>
                   <Text style={{ fontFamily: 'Inter-Regular', fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Titular</Text>
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF', textTransform: 'uppercase' }} numberOfLines={1}>
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#FFFFFF', textTransform: 'uppercase' }} numberOfLines={1}>
                     {cardName || 'NOMBRE APELLIDO'}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ fontFamily: 'Inter-Regular', fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Vence</Text>
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF' }}>
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#FFFFFF' }}>
                     {expiry || 'MM/AA'}
                   </Text>
                 </View>
@@ -110,7 +188,7 @@ export default function AddPaymentScreen() {
           </View>
 
           {/* Formulario */}
-          <View style={{ gap: 20 }}>
+          <View style={{ gap: 16 }}>
             <View>
               <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary, marginBottom: 8 }}>Número de Tarjeta</Text>
               <TextInput
@@ -167,25 +245,37 @@ export default function AddPaymentScreen() {
           </View>
 
           {/* Sello de seguridad */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 }}>
             <ShieldCheck color="#00A650" size={16} />
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: textSecondary, marginLeft: 8 }}>
-              Tus datos están protegidos y encriptados
+              Cifrado seguro 256-bit y almacenamiento protegido
             </Text>
           </View>
 
-        </ScrollView>
-
-        {/* Botón flotante para guardar */}
-        <View style={{ padding: 24, backgroundColor: bg, borderTopWidth: 1, borderTopColor: borderColor }}>
+          {/* Botón Guardar */}
           <TouchableOpacity 
             onPress={handleSave}
-            style={{ backgroundColor: '#F2A900', paddingVertical: 16, borderRadius: 16, alignItems: 'center', shadowColor: '#F2A900', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }}
+            disabled={isSaving}
+            style={{ 
+              marginTop: 24,
+              backgroundColor: '#F2A900', 
+              paddingVertical: 16, 
+              borderRadius: 16, 
+              alignItems: 'center', 
+              shadowColor: '#F2A900', 
+              shadowOffset: { width: 0, height: 4 }, 
+              shadowOpacity: 0.3, 
+              shadowRadius: 8, 
+              elevation: 4,
+              opacity: isSaving ? 0.7 : 1
+            }}
           >
-            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 16, color: '#111111' }}>Guardar Tarjeta</Text>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 16, color: '#111111' }}>
+              {isSaving ? 'Guardando...' : 'Guardar y Vincular Tarjeta'}
+            </Text>
           </TouchableOpacity>
-        </View>
 
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

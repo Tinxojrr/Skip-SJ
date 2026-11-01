@@ -1,48 +1,106 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, Clock, X } from "lucide-react";
+import { supabase } from "../../../lib/supabase";
 import { useAuth } from "../../../context/AuthContext";
 
+interface AlertItem {
+  id: string;
+  tipo: "stock" | "demanda";
+  titulo: string;
+  mensaje: string;
+  urgente: boolean;
+}
+
 export function StockAlertsBanner() {
-  const { role, nombreLocal } = useAuth();
+  const { role, locatarioId, nombreLocal } = useAuth();
   const isAdmin = role === "super_admin";
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
 
-  const adminAlerts = [
-    {
-      id: "a1",
-      tipo: "stock",
-      titulo: "Stock Crítico en Sede",
-      mensaje: "Quedan solo 4 Empanadas de Pino en Castaño y 3 Sándwiches en Paradiso.",
-      urgente: true,
-    },
-    {
-      id: "a2",
-      tipo: "demanda",
-      titulo: "Alerta de Horario Punta en Campus",
-      mensaje: "Inicio de recreo central en 15 minutos (13:00 hrs). Alza proyectada del 45% en comandas.",
-      urgente: false,
-    },
-  ];
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const generatedAlerts: AlertItem[] = [];
 
-  const vendorAlerts = [
-    {
-      id: "v1",
-      tipo: "stock",
-      titulo: `Alerta de Stock en ${nombreLocal || "tu local"}`,
-      mensaje: "Quedan pocas unidades de pan y quesos para Sándwich Barros Luco. Verificar reposición.",
-      urgente: true,
-    },
-    {
-      id: "v2",
-      tipo: "demanda",
-      titulo: "Próximo Recreo Masivo",
-      mensaje: "Mayor afluencia de alumnos en 15 minutos. Tener lista la máquina de café y vitrina.",
-      urgente: false,
-    },
-  ];
+      // 1. Consultar productos no disponibles o con bajo stock en la base de datos
+      let prodQuery = supabase
+        .from("productos")
+        .select("id, nombre_producto, disponible, stock_diario, locatarios(nombre)")
+        .or("disponible.eq.false,stock_diario.lte.5");
 
-  const activeAlerts = isAdmin ? adminAlerts : vendorAlerts;
-  const visibleAlerts = activeAlerts.filter((a) => !dismissed.includes(a.id));
+      if (!isAdmin && locatarioId) {
+        prodQuery = prodQuery.eq("locatario_id", locatarioId);
+      }
+
+      const { data: prods } = await prodQuery;
+
+      if (prods && prods.length > 0) {
+        const unavailable = prods.filter((p) => p.disponible === false);
+        if (unavailable.length > 0) {
+          const names = unavailable.slice(0, 3).map((p) => p.nombre_producto).join(", ");
+          generatedAlerts.push({
+            id: `stock-unavail-${unavailable[0].id}`,
+            tipo: "stock",
+            titulo: isAdmin ? "Platos Agotados en Sede" : `Platos No Disponibles en ${nombreLocal || "tu local"}`,
+            mensaje: `Los siguientes productos están pausados para venta: ${names}${unavailable.length > 3 ? ` y ${unavailable.length - 3} más` : ""}.`,
+            urgente: true,
+          });
+        }
+      }
+
+      // 2. Consultar si hay alta demanda real de pedidos en cocina
+      let pedQuery = supabase
+        .from("pedidos")
+        .select("id, estado")
+        .in("estado", ["pagado", "en_preparacion"]);
+
+      if (!isAdmin && locatarioId) {
+        pedQuery = pedQuery.eq("locatario_id", locatarioId);
+      }
+
+      const { data: activeOrders } = await pedQuery;
+      if (activeOrders && activeOrders.length >= 6) {
+        generatedAlerts.push({
+          id: `demand-high-${activeOrders.length}`,
+          tipo: "demanda",
+          titulo: "Alta Demanda en Cocina",
+          mensaje: `Tienes ${activeOrders.length} comandas activas en mesón. Agiliza las entregas para mantener el SLA de entrega.`,
+          urgente: false,
+        });
+      }
+
+      setAlerts(generatedAlerts);
+    } catch (err) {
+      console.error("Error obteniendo alertas de stock:", err);
+    }
+  }, [isAdmin, locatarioId, nombreLocal]);
+
+  useEffect(() => {
+    fetchAlerts();
+
+    const channel = supabase
+      .channel("stock-alerts-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "productos" },
+        () => {
+          fetchAlerts();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pedidos" },
+        () => {
+          fetchAlerts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAlerts]);
+
+  const visibleAlerts = alerts.filter((a) => !dismissed.includes(a.id));
 
   if (visibleAlerts.length === 0) return null;
 

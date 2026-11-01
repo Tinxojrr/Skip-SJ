@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, Image, Switch } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
+import { usePaymentStore } from '../../store/paymentStore';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
 import { 
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const { session, profile, setSession } = useAuthStore();
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode);
+  const { baesBalance, savedCards } = usePaymentStore();
   const router = useRouter();
 
   // Variables de tema dinámico
@@ -81,7 +83,7 @@ export default function ProfileScreen() {
   const handlePressJunaeb = () => {
     Alert.alert(
       "Tarjeta Junaeb BAES",
-      `Estado: Activa y vinculada\nBeneficiario: ${displayName}\nConvenio: Sede San Joaquín\n\nPuedes utilizar tu saldo BAES para pagar de forma presencial o validar tu compra en los tótems y cajas de la sede.`,
+      `Estado: Activa y vinculada\nBeneficiario: ${displayName}\nConvenio: Sede San Joaquín\nSaldo Disponible: $${baesBalance.toLocaleString('es-CL')}\n\nPuedes utilizar tu saldo BAES directamente en el checkout sin comisiones.`,
       [
         { text: "Administrar", onPress: () => router.push('/add-payment') },
         { text: "Cerrar", style: "cancel" }
@@ -206,7 +208,7 @@ export default function ProfileScreen() {
                   Tarjeta Junaeb BAES
                 </Text>
                 <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
-                  Saldo disponible: $42.500
+                  Saldo disponible: ${baesBalance.toLocaleString('es-CL')}
                 </Text>
               </View>
               <ChevronRight color={textSecondary} size={20} />
@@ -243,6 +245,41 @@ export default function ProfileScreen() {
               </View>
               <ChevronRight color={textSecondary} size={20} />
             </TouchableOpacity>
+
+            {/* Tarjetas Bancarias Guardadas por el Usuario */}
+            {savedCards.map((c) => (
+              <TouchableOpacity 
+                key={c.id}
+                onPress={() => router.push('/add-payment')}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: cardBg,
+                  padding: 16,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: borderColor,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.03,
+                  shadowRadius: 8,
+                  elevation: 1
+                }}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.brand === 'visa' ? 'rgba(29,78,216,0.15)' : 'rgba(234,88,12,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                  <CreditCard color={c.brand === 'visa' ? '#2563EB' : '#F97316'} size={20} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                  <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
+                    {c.brand.toUpperCase()} {c.cardNumber}
+                  </Text>
+                  <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
+                    Vence: {c.expiry} • {c.cardName}
+                  </Text>
+                </View>
+                <ChevronRight color={textSecondary} size={20} />
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 

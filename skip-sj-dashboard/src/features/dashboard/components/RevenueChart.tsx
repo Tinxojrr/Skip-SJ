@@ -18,46 +18,53 @@ interface DailyRevenue {
   pedidos: number;
 }
 
-const DEFAULT_WEEKLY_DATA: DailyRevenue[] = [
-  { dia: "Lun", ventas: 385000, pedidos: 96 },
-  { dia: "Mar", ventas: 422000, pedidos: 108 },
-  { dia: "Mié", ventas: 465000, pedidos: 114 },
-  { dia: "Jue", ventas: 498000, pedidos: 122 },
-  { dia: "Vie", ventas: 418500, pedidos: 104 },
-  { dia: "Sáb", ventas: 185000, pedidos: 45 },
-  { dia: "Dom", ventas: 0, pedidos: 0 },
-];
+const getEmptyWeek = (): DailyRevenue[] => {
+  const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const list: DailyRevenue[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    list.push({ dia: diasSemana[d.getDay()], ventas: 0, pedidos: 0 });
+  }
+  return list;
+};
 
 export function RevenueChart() {
   const { locatarioId, role } = useAuth();
-  const [data, setData] = useState<DailyRevenue[]>(DEFAULT_WEEKLY_DATA);
-  const [totalSemana, setTotalSemana] = useState(2373500);
+  const [data, setData] = useState<DailyRevenue[]>(getEmptyWeek());
+  const [totalSemana, setTotalSemana] = useState(0);
   const [metricView, setMetricView] = useState<"ventas" | "pedidos">("ventas");
 
   const fetchWeeklyRevenue = useCallback(async () => {
     try {
+      const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+      const diasMap: { [key: string]: { ventas: number; pedidos: number } } = {};
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = diasSemana[d.getDay()];
+        diasMap[key] = { ventas: 0, pedidos: 0 };
+      }
+
+      // 7 días atrás
+      const sieteDiasAtras = new Date();
+      sieteDiasAtras.setDate(sieteDiasAtras.getDate() - 7);
+      sieteDiasAtras.setHours(0, 0, 0, 0);
+
       let query = supabase
         .from("pedidos")
         .select("monto_total, estado, created_at")
         .neq("estado", "cancelado")
-        .neq("estado", "pendiente_pago");
+        .neq("estado", "pendiente_pago")
+        .gte("created_at", sieteDiasAtras.toISOString());
 
       if (role !== "super_admin" && locatarioId) {
         query = query.eq("locatario_id", locatarioId);
       }
 
       const { data: pedidos, error } = await query;
-      if (!error && pedidos && pedidos.length > 0) {
-        const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-        const diasMap: { [key: string]: { ventas: number; pedidos: number } } = {};
-
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const key = diasSemana[d.getDay()];
-          diasMap[key] = { ventas: 0, pedidos: 0 };
-        }
-
+      if (!error && pedidos) {
         let sumaTotal = 0;
         pedidos.forEach((p) => {
           const fechaPedido = new Date(p.created_at);
@@ -78,11 +85,13 @@ export function RevenueChart() {
         setData(chartData);
         setTotalSemana(sumaTotal);
       } else {
-        setData(DEFAULT_WEEKLY_DATA);
-        setTotalSemana(2373500);
+        setData(getEmptyWeek());
+        setTotalSemana(0);
       }
     } catch (err) {
       console.error(err);
+      setData(getEmptyWeek());
+      setTotalSemana(0);
     }
   }, [locatarioId, role]);
 
@@ -207,10 +216,20 @@ export function RevenueChart() {
       <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
         <span className="flex items-center gap-1.5">
           <BarChart2 className="w-3.5 h-3.5 text-[#F5A623]" />
-          Día de mayor venta: <strong>Jueves ($498.000 CLP)</strong>
+          {(() => {
+            const best = [...data].sort((a, b) => b.ventas - a.ventas)[0];
+            if (best && best.ventas > 0) {
+              return (
+                <>
+                  Día de mayor venta: <strong>{best.dia} (${best.ventas.toLocaleString("es-CL")} CLP)</strong>
+                </>
+              );
+            }
+            return <span>Sin ventas registradas en los últimos 7 días</span>;
+          })()}
         </span>
-        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-          +18.4% vs semana previa
+        <span className={totalSemana > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-400"}>
+          {totalSemana > 0 ? "En vivo (Sede San Joaquín)" : "Sin actividad"}
         </span>
       </div>
     </div>

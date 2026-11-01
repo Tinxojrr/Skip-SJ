@@ -10,34 +10,77 @@ import CampusStoresOverview from "./components/CampusStoresOverview";
 import StockAlertsBanner from "./components/StockAlertsBanner";
 import CopilotoIABtn from "./components/CopilotoIABtn";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 export const DashboardPage = () => {
-  const { role, nombreLocal } = useAuth();
+  const { role, locatarioId, nombreLocal } = useAuth();
   const isAdmin = role === "super_admin";
   const [periodo, setPeriodo] = useState<"hoy" | "semana" | "mes">("hoy");
 
-  const handleExportReport = () => {
-    // Generación dinámica de CSV de cuadratura de caja para la sede
-    const headers = "ID,CodigoRetiro,Cliente,Local,MontoTotal,MetodoPago,Estado,Fecha\n";
-    const sampleRows = [
-      `1,SJ-401,Martin Aburto,${nombreLocal || "Paradiso"},6200,BancoEstado (CuentaRUT),Completado,2026-10-28 12:45`,
-      `2,SJ-402,Ignacio Valenzuela,${nombreLocal || "Paradiso"},5700,Tarjeta Junaeb BAES,Completado,2026-10-28 12:51`,
-      `3,SJ-403,Camila Rojas,${nombreLocal || "Paradiso"},4500,BancoEstado (CuentaRUT),Completado,2026-10-28 13:02`,
-      `4,SJ-404,Matías Soto,${nombreLocal || "Paradiso"},4800,MACH / Bci,Completado,2026-10-28 13:10`,
-      `5,SJ-405,Fernanda Díaz,${nombreLocal || "Paradiso"},3200,Tarjeta Junaeb BAES,En Cocina,2026-10-28 13:15`,
-    ].join("\n");
+  const handleExportReport = async () => {
+    try {
+      const now = new Date();
+      let startDate = new Date();
+      if (periodo === "hoy") {
+        startDate.setHours(0, 0, 0, 0);
+      } else if (periodo === "semana") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (periodo === "mes") {
+        startDate.setDate(now.getDate() - 30);
+      }
 
-    const blob = new Blob([headers + sampleRows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `Cuadratura_Ventas_${nombreLocal ? nombreLocal.replace(/\s+/g, "_") : "SkipSJ"}_${periodo}_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      let query = supabase
+        .from("pedidos")
+        .select(`
+          id,
+          codigo_retiro,
+          monto_total,
+          metodo_pago,
+          estado,
+          created_at,
+          locatarios ( nombre ),
+          usuarios ( p_nombre, apellido_p, email )
+        `)
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (!isAdmin && locatarioId) {
+        query = query.eq("locatario_id", locatarioId);
+      }
+
+      const { data: pedidos, error } = await query;
+      if (error) throw error;
+
+      const headers = "ID,CodigoRetiro,Cliente,Local,MontoTotal,MetodoPago,Estado,Fecha\n";
+      const rows = (pedidos || [])
+        .map((p: any, idx: number) => {
+          const u = Array.isArray(p.usuarios) ? p.usuarios[0] : p.usuarios;
+          const cliente = u
+            ? `${u.p_nombre || ""} ${u.apellido_p || ""}`.trim() || u.email
+            : "Alumno";
+          const local =
+            (Array.isArray(p.locatarios) ? p.locatarios[0]?.nombre : p.locatarios?.nombre) ||
+            nombreLocal ||
+            "Sede San Joaquín";
+          const fecha = new Date(p.created_at).toLocaleString("es-CL");
+          return `${idx + 1},${p.codigo_retiro || p.id.substring(0, 6)},"${cliente}","${local}",${p.monto_total},${p.metodo_pago},${p.estado},"${fecha}"`;
+        })
+        .join("\n");
+
+      const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `Cuadratura_Ventas_${nombreLocal ? nombreLocal.replace(/\s+/g, "_") : "SkipSJ"}_${periodo}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error al exportar reporte:", err);
+    }
   };
 
   return (
