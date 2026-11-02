@@ -68,9 +68,9 @@ export function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderPr
               <select
                 className="bg-transparent text-xs font-medium text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
                 value={locatarioId || ""}
-                onChange={(e) => changeLocatarioId(e.target.value)}
+                onChange={(e) => changeLocatarioId(e.target.value || null)}
               >
-                <option value="" disabled className="dark:bg-zinc-900">Seleccionar local...</option>
+                <option value="" className="dark:bg-zinc-900">Todos los locales (Sede General)</option>
                 {locales.map((l) => (
                   <option key={l.id} value={l.id} className="dark:bg-zinc-900">
                     {l.nombre}

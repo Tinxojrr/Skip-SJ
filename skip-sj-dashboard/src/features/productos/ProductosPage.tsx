@@ -24,7 +24,10 @@ export const ProductosPage = () => {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchProductos = useCallback(async () => {
-    if (!locatarioId && role !== 'super_admin') return;
+    if (!locatarioId && role !== 'super_admin') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     try {

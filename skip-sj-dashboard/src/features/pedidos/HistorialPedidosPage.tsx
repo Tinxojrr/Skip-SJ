@@ -45,7 +45,10 @@ export const HistorialPedidosPage = () => {
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
 
   const fetchHistorial = useCallback(async () => {
-    if (!locatarioId && role !== 'super_admin') return;
+    if (!locatarioId && role !== 'super_admin') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     try {

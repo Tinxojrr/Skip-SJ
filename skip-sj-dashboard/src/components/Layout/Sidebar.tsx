@@ -4,7 +4,6 @@ import {
   Package,
   ShoppingBag,
   Store,
-  Users,
   UtensilsCrossed,
   History
 } from "lucide-react";
@@ -74,10 +73,9 @@ export function Sidebar({ collapsed }: SidebarProps) {
       label: "Catálogo General",
     },
     {
-      id: "admin-users",
-      icon: Users,
-      label: "Usuarios Duoc",
-      count: "Sede SJ",
+      id: "historial",
+      icon: History,
+      label: "Historial General",
     },
   ];
 

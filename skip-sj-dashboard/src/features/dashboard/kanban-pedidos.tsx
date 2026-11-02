@@ -64,6 +64,10 @@ export const KanbanBoard = () => {
 
   // 2. Cargar Pedidos
   const fetchPedidos = useCallback(async () => {
+    if (!locatarioId && role !== 'super_admin') {
+      setLoading(false);
+      return;
+    }
     try {
       let query = supabase
         .from('pedidos')
