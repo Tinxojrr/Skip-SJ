@@ -49,7 +49,7 @@ El presente Plan de Pruebas establece la estrategia, alcance, recursos, entorno,
   * Canales de transmisión de cambios por WebSockets (*Postgres CDC*).
 
 ### 2.2. Elementos Fuera de Alcance (Out-of-Scope)
-* Integración en ambiente productivo comercial de Transbank o sistemas cerrados sin API pública como Junaeb BAES (se opera bajo ambiente oficial Transbank Developer Sandbox con tarjetas de prueba certificadas, CuentaRUT y MACH para el entorno académico).
+* Integración en ambiente productivo comercial de Transbank o convenios cerrados sin API pública de desarrollo (se opera bajo ambiente oficial Transbank Developer Sandbox con tarjetas de prueba certificadas, CuentaRUT y MACH para el entorno académico).
 * Pruebas de compatibilidad con sistemas operativos móviles iOS inferiores a la versión 14.
 
 ---
