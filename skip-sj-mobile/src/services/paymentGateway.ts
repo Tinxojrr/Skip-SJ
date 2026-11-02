@@ -73,13 +73,16 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
     };
   }
 
-  // Mapear proveedor y enum de Supabase ('mercadopago' | 'otro')
-  let dbMetodoPago: 'mercadopago' | 'otro' = 'otro';
+  // Mapear proveedor y enum de Supabase ('webpay' | 'bancoestado' | 'otro')
+  let dbMetodoPago: 'webpay' | 'bancoestado' | 'otro' = 'bancoestado';
   let providerName = 'BancoEstado CuentaRUT (Open Banking Dev)';
   
   if (paymentMethod === 'card' || paymentMethod === 'webpay') {
-    dbMetodoPago = 'mercadopago';
+    dbMetodoPago = 'webpay';
     providerName = `Webpay Plus / ${cardDetails?.brand?.toUpperCase() || 'Débito/Crédito'} (Transbank Sandbox 597055555532)`;
+  } else if (paymentMethod === 'bancoestado') {
+    dbMetodoPago = 'bancoestado';
+    providerName = 'BancoEstado CuentaRUT (Open Banking Dev)';
   } else if (paymentMethod === 'mach') {
     dbMetodoPago = 'otro';
     providerName = 'MACH Bci Pay (Dev)';
@@ -94,7 +97,7 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
       .insert({
         usuario_id: userId,
         locatario_id: storeId || null,
-        estado: 'pendiente_pago',
+        estado: 'pagado',
         metodo_pago: dbMetodoPago,
         monto_total: total,
         codigo_retiro: codigoRetiro,

@@ -1,25 +1,37 @@
 -- ==========================================================
--- SOLUCIÓN DEFINITIVA: ELIMINAR RECURSIÓN INFINITA (ERROR 42P17)
+-- SCRIPT INTEGRAL: METODOS DE PAGO REALES Y FIX DE RLS (SIN BUCLES)
 -- ==========================================================
 
--- 1. LIMPIAR POLÍTICAS RECURSIVAS EN USUARIOS
--- La política antigua consultaba "pedidos", lo que provocaba un bucle infinito
+-- 1. AGREGAR MÉTODOS DE PAGO REALES AL ENUM DE SUPABASE (Webpay y BancoEstado)
+ALTER TYPE metodo_pago_enum ADD VALUE IF NOT EXISTS 'webpay';
+ALTER TYPE metodo_pago_enum ADD VALUE IF NOT EXISTS 'bancoestado';
+
+-- 2. ACTUALIZAR PEDIDOS ANTIGUOS QUE DECÍAN 'mercadopago' A 'webpay'
+UPDATE public.pedidos 
+SET metodo_pago = 'webpay' 
+WHERE metodo_pago = 'mercadopago';
+
+-- 3. ACTIVAR PEDIDOS QUE QUEDARON EN 'pendiente_pago' PARA QUE SE VEAN EN COCINA
+UPDATE public.pedidos 
+SET estado = 'pagado' 
+WHERE estado = 'pendiente_pago';
+
+-- 4. ELIMINAR POLÍTICAS CON BUCLES RECURSIVOS EN USUARIOS (Evita error 42P17)
 DROP POLICY IF EXISTS "Admins ven clientes de sus pedidos" ON public.usuarios;
 DROP POLICY IF EXISTS "Usuarios ven su propio perfil" ON public.usuarios;
 DROP POLICY IF EXISTS "Lectura de perfiles de usuarios" ON public.usuarios;
 
--- Permitir lectura directa de perfiles a usuarios autenticados (sin bucles)
 CREATE POLICY "Lectura de perfiles de usuarios" ON public.usuarios
 FOR SELECT TO authenticated
 USING (true);
 
--- 2. LIMPIAR Y RECREAR POLÍTICA EN PEDIDOS
+-- 5. POLÍTICA LIMPIA EN PEDIDOS (Para que alumnos, cajeros y admins gestionen)
 DROP POLICY IF EXISTS "Gestion de pedidos segun rol y local" ON public.pedidos;
 DROP POLICY IF EXISTS "Alumnos ven sus propios pedidos" ON public.pedidos;
+DROP POLICY IF EXISTS "Alumnos insertan sus pedidos" ON public.pedidos;
 DROP POLICY IF EXISTS "Locatarios y Admins gestionan pedidos de su local" ON public.pedidos;
 DROP POLICY IF EXISTS "Permitir ver pedidos a administradores de tienda" ON public.pedidos;
 
--- Política sin consultas circulares:
 CREATE POLICY "Gestion de pedidos segun rol y local" ON public.pedidos
 FOR ALL TO authenticated
 USING (
@@ -45,7 +57,7 @@ WITH CHECK (
     )
 );
 
--- 3. POLÍTICA EN PEDIDO_ITEMS
+-- 6. POLÍTICA LIMPIA EN PEDIDO_ITEMS
 DROP POLICY IF EXISTS "Gestion pedido_items segun rol" ON public.pedido_items;
 DROP POLICY IF EXISTS "Admins ven items de pedidos de su local" ON public.pedido_items;
 
