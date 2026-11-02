@@ -18,46 +18,105 @@ interface DailyRevenue {
   pedidos: number;
 }
 
-const getEmptyWeek = (): DailyRevenue[] => {
-  const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-  const list: DailyRevenue[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    list.push({ dia: diasSemana[d.getDay()], ventas: 0, pedidos: 0 });
-  }
-  return list;
-};
+interface RevenueChartProps {
+  periodo?: "hoy" | "semana" | "mes";
+}
 
-export function RevenueChart() {
+export function RevenueChart({ periodo = "hoy" }: RevenueChartProps) {
   const { locatarioId, role } = useAuth();
-  const [data, setData] = useState<DailyRevenue[]>(getEmptyWeek());
-  const [totalSemana, setTotalSemana] = useState(0);
+  const [data, setData] = useState<DailyRevenue[]>([]);
+  const [totalPeriodo, setTotalPeriodo] = useState(0);
   const [metricView, setMetricView] = useState<"ventas" | "pedidos">("ventas");
 
-  const fetchWeeklyRevenue = useCallback(async () => {
+  const fetchRevenue = useCallback(async () => {
     try {
-      const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-      const diasMap: { [key: string]: { ventas: number; pedidos: number } } = {};
+      const now = new Date();
+      let startDate = new Date();
+      let chartBuckets: { label: string; filterFn: (d: Date) => boolean; ventas: number; pedidos: number }[] = [];
 
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = diasSemana[d.getDay()];
-        diasMap[key] = { ventas: 0, pedidos: 0 };
+      if (periodo === "hoy") {
+        startDate.setHours(0, 0, 0, 0);
+        const hours = [
+          { label: "09:00", hStart: 0, hEnd: 10 },
+          { label: "11:00", hStart: 10, hEnd: 12 },
+          { label: "13:00", hStart: 12, hEnd: 14 },
+          { label: "15:00", hStart: 14, hEnd: 16 },
+          { label: "17:00", hStart: 16, hEnd: 18 },
+          { label: "19:00", hStart: 18, hEnd: 20 },
+          { label: "21:00", hStart: 20, hEnd: 22 },
+          { label: "23:00", hStart: 22, hEnd: 24 },
+        ];
+        chartBuckets = hours.map((h) => ({
+          label: h.label,
+          filterFn: (d: Date) => d.getHours() >= h.hStart && d.getHours() < h.hEnd,
+          ventas: 0,
+          pedidos: 0,
+        }));
+      } else if (periodo === "semana") {
+        startDate.setDate(now.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dayName = diasSemana[d.getDay()];
+          const dateStr = d.toDateString();
+          chartBuckets.push({
+            label: dayName,
+            filterFn: (pedDate: Date) => pedDate.toDateString() === dateStr,
+            ventas: 0,
+            pedidos: 0,
+          });
+        }
+      } else if (periodo === "mes") {
+        startDate.setDate(now.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        chartBuckets = [
+          {
+            label: "Sem 1 (Hace 4)",
+            filterFn: (d: Date) => {
+              const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+              return diffDays >= 21 && diffDays <= 31;
+            },
+            ventas: 0,
+            pedidos: 0,
+          },
+          {
+            label: "Sem 2 (Hace 3)",
+            filterFn: (d: Date) => {
+              const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+              return diffDays >= 14 && diffDays < 21;
+            },
+            ventas: 0,
+            pedidos: 0,
+          },
+          {
+            label: "Sem 3 (Hace 2)",
+            filterFn: (d: Date) => {
+              const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+              return diffDays >= 7 && diffDays < 14;
+            },
+            ventas: 0,
+            pedidos: 0,
+          },
+          {
+            label: "Esta Semana",
+            filterFn: (d: Date) => {
+              const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+              return diffDays >= 0 && diffDays < 7;
+            },
+            ventas: 0,
+            pedidos: 0,
+          },
+        ];
       }
-
-      // 7 días atrás
-      const sieteDiasAtras = new Date();
-      sieteDiasAtras.setDate(sieteDiasAtras.getDate() - 7);
-      sieteDiasAtras.setHours(0, 0, 0, 0);
 
       let query = supabase
         .from("pedidos")
         .select("monto_total, estado, created_at")
         .neq("estado", "cancelado")
         .neq("estado", "pendiente_pago")
-        .gte("created_at", sieteDiasAtras.toISOString());
+        .gte("created_at", startDate.toISOString());
 
       if (role !== "super_admin" && locatarioId) {
         query = query.eq("locatario_id", locatarioId);
@@ -67,36 +126,36 @@ export function RevenueChart() {
       if (!error && pedidos) {
         let sumaTotal = 0;
         pedidos.forEach((p) => {
-          const fechaPedido = new Date(p.created_at);
-          const diaNom = diasSemana[fechaPedido.getDay()];
-          if (diasMap[diaNom]) {
-            diasMap[diaNom].ventas += p.monto_total || 0;
-            diasMap[diaNom].pedidos += 1;
+          const pDate = new Date(p.created_at);
+          const bucket = chartBuckets.find((b) => b.filterFn(pDate));
+          if (bucket) {
+            bucket.ventas += p.monto_total || 0;
+            bucket.pedidos += 1;
           }
           sumaTotal += p.monto_total || 0;
         });
 
-        const chartData: DailyRevenue[] = Object.keys(diasMap).map((dia) => ({
-          dia,
-          ventas: diasMap[dia].ventas,
-          pedidos: diasMap[dia].pedidos,
-        }));
-
-        setData(chartData);
-        setTotalSemana(sumaTotal);
+        setData(
+          chartBuckets.map((b) => ({
+            dia: b.label,
+            ventas: b.ventas,
+            pedidos: b.pedidos,
+          }))
+        );
+        setTotalPeriodo(sumaTotal);
       } else {
-        setData(getEmptyWeek());
-        setTotalSemana(0);
+        setData([]);
+        setTotalPeriodo(0);
       }
     } catch (err) {
       console.error(err);
-      setData(getEmptyWeek());
-      setTotalSemana(0);
+      setData([]);
+      setTotalPeriodo(0);
     }
-  }, [locatarioId, role]);
+  }, [locatarioId, role, periodo]);
 
   useEffect(() => {
-    fetchWeeklyRevenue();
+    fetchRevenue();
 
     const channel = supabase
       .channel("chart-revenue-channel")
@@ -104,7 +163,7 @@ export function RevenueChart() {
         "postgres_changes",
         { event: "*", schema: "public", table: "pedidos" },
         () => {
-          fetchWeeklyRevenue();
+          fetchRevenue();
         }
       )
       .subscribe();
@@ -112,7 +171,7 @@ export function RevenueChart() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchWeeklyRevenue]);
+  }, [fetchRevenue]);
 
   return (
     <div className="bg-white dark:bg-[#131318] rounded-2xl border border-zinc-200/90 dark:border-zinc-800 p-6 shadow-sm flex flex-col justify-between">
@@ -126,7 +185,11 @@ export function RevenueChart() {
               </h3>
             </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Comparativa de volumen de comanda por día en Sede San Joaquín
+              {periodo === "hoy"
+                ? "Distribución de ventas por bloque horario del día"
+                : periodo === "mes"
+                ? "Comparativa de recaudación en las últimas 4 semanas"
+                : "Comparativa de volumen de comanda por día de la semana"}
             </p>
           </div>
 
@@ -159,7 +222,7 @@ export function RevenueChart() {
                 Total Ciclo
               </p>
               <p className="text-base font-black font-mono text-zinc-950 dark:text-white">
-                ${totalSemana.toLocaleString("es-CL")}
+                ${totalPeriodo.toLocaleString("es-CL")}
               </p>
             </div>
           </div>
@@ -221,15 +284,15 @@ export function RevenueChart() {
             if (best && best.ventas > 0) {
               return (
                 <>
-                  Día de mayor venta: <strong>{best.dia} (${best.ventas.toLocaleString("es-CL")} CLP)</strong>
+                  Punto de mayor venta: <strong>{best.dia} (${best.ventas.toLocaleString("es-CL")} CLP)</strong>
                 </>
               );
             }
-            return <span>Sin ventas registradas en los últimos 7 días</span>;
+            return <span>Sin ventas registradas en el período seleccionado</span>;
           })()}
         </span>
-        <span className={totalSemana > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-400"}>
-          {totalSemana > 0 ? "En vivo (Sede San Joaquín)" : "Sin actividad"}
+        <span className={totalPeriodo > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-400"}>
+          {totalPeriodo > 0 ? "En vivo (Sede San Joaquín)" : "Sin actividad"}
         </span>
       </div>
     </div>

@@ -99,7 +99,7 @@ export const DashboardPage = () => {
       <StatsGrid periodo={periodo} />
 
       {/* 4. Gráficos de Recaudación y Embudo de Cocina */}
-      <ChartSection />
+      <ChartSection periodo={periodo} />
 
       {/* 5. Widgets de Alto Impacto: Top 5 Productos del Local/Sede & Desglose de Pago */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
