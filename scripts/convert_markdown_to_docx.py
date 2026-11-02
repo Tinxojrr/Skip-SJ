@@ -296,3 +296,4 @@ if __name__ == '__main__':
     base = os.path.abspath(r"C:\Users\Martin\skip-sj\docs")
     for doc in DOCS:
         convert_md_to_docx(base, doc)
+
