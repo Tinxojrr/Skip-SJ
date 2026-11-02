@@ -1,22 +1,22 @@
 -- ==========================================================
--- SCRIPT INTEGRAL: METODOS DE PAGO REALES Y FIX DE RLS (SIN BUCLES)
+-- SCRIPT FINAL DEFINITIVO: VARCHAR + FIX RLS
 -- ==========================================================
 
--- 1. AGREGAR MÉTODOS DE PAGO REALES AL ENUM DE SUPABASE (Webpay y BancoEstado)
-ALTER TYPE metodo_pago_enum ADD VALUE IF NOT EXISTS 'webpay';
-ALTER TYPE metodo_pago_enum ADD VALUE IF NOT EXISTS 'bancoestado';
+-- 1. CONVERTIR metodo_pago A VARCHAR(50) (Evita errores de Enum en PostgreSQL)
+ALTER TABLE public.pedidos 
+ALTER COLUMN metodo_pago TYPE VARCHAR(50) USING metodo_pago::text;
 
--- 2. ACTUALIZAR PEDIDOS ANTIGUOS QUE DECÍAN 'mercadopago' A 'webpay'
+-- 2. ACTUALIZAR 'mercadopago' A 'webpay'
 UPDATE public.pedidos 
 SET metodo_pago = 'webpay' 
 WHERE metodo_pago = 'mercadopago';
 
--- 3. ACTIVAR PEDIDOS QUE QUEDARON EN 'pendiente_pago' PARA QUE SE VEAN EN COCINA
+-- 3. ACTIVAR PEDIDOS 'pendiente_pago' A 'pagado'
 UPDATE public.pedidos 
 SET estado = 'pagado' 
 WHERE estado = 'pendiente_pago';
 
--- 4. ELIMINAR POLÍTICAS CON BUCLES RECURSIVOS EN USUARIOS (Evita error 42P17)
+-- 4. ELIMINAR BUCLES RECURSIVOS EN USUARIOS
 DROP POLICY IF EXISTS "Admins ven clientes de sus pedidos" ON public.usuarios;
 DROP POLICY IF EXISTS "Usuarios ven su propio perfil" ON public.usuarios;
 DROP POLICY IF EXISTS "Lectura de perfiles de usuarios" ON public.usuarios;
@@ -25,7 +25,7 @@ CREATE POLICY "Lectura de perfiles de usuarios" ON public.usuarios
 FOR SELECT TO authenticated
 USING (true);
 
--- 5. POLÍTICA LIMPIA EN PEDIDOS (Para que alumnos, cajeros y admins gestionen)
+-- 5. POLÍTICA LIMPIA EN PEDIDOS (Sin bucle infinito)
 DROP POLICY IF EXISTS "Gestion de pedidos segun rol y local" ON public.pedidos;
 DROP POLICY IF EXISTS "Alumnos ven sus propios pedidos" ON public.pedidos;
 DROP POLICY IF EXISTS "Alumnos insertan sus pedidos" ON public.pedidos;
