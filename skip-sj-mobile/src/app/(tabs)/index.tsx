@@ -23,6 +23,7 @@ export default function HomeScreen() {
 
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const clearCart = useCartStore((state) => state.clearCart);
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const bg = isDarkMode ? '#09090B' : '#FAFAFA';
@@ -475,6 +476,37 @@ export default function HomeScreen() {
                       <TouchableOpacity 
                         onPress={(e) => {
                           e.stopPropagation?.();
+                          const currentStoreId = cartItems[0]?.storeId;
+                          const newStoreId = product.locatario_id;
+                          const currentStoreName = cartItems[0]?.storeName || 'otro local';
+                          const newStoreName = product.locatarios?.nombre || 'este local';
+
+                          if (cartItems.length > 0 && currentStoreId && newStoreId && currentStoreId !== newStoreId) {
+                            Alert.alert(
+                              '¿Cambiar de local?',
+                              `Tu pedido actual tiene productos de "${currentStoreName}". Para agregar productos de "${newStoreName}", debemos iniciar un nuevo carrito de retiro.`,
+                              [
+                                { text: 'Cancelar', style: 'cancel' },
+                                { 
+                                  text: 'Iniciar nuevo carrito', 
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    clearCart();
+                                    addItem({
+                                      id: product.id,
+                                      name: product.nombre_producto,
+                                      price: product.precio,
+                                      quantity: 1,
+                                      storeId: product.locatario_id,
+                                      storeName: product.locatarios?.nombre || 'Local'
+                                    });
+                                  }
+                                }
+                              ]
+                            );
+                            return;
+                          }
+
                           addItem({
                             id: product.id,
                             name: product.nombre_producto,

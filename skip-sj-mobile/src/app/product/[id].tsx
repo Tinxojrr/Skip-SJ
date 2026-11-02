@@ -11,7 +11,7 @@ import { getProductImage } from '../../utils/productImages';
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { addItem } = useCartStore();
+  const { addItem, items, clearCart } = useCartStore();
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
 
@@ -59,6 +59,39 @@ export default function ProductDetailScreen() {
   const handleAddToCart = () => {
     if (!product) return;
     
+    const currentStoreId = items[0]?.storeId;
+    const newStoreId = product.locatario_id;
+    const currentStoreName = items[0]?.storeName || 'otro local';
+    const newStoreName = product.locatarios?.nombre || 'este local';
+
+    if (items.length > 0 && currentStoreId && newStoreId && currentStoreId !== newStoreId) {
+      Alert.alert(
+        '¿Cambiar de local?',
+        `Tu pedido actual tiene productos de "${currentStoreName}". Para agregar productos de "${newStoreName}", debemos iniciar un nuevo carrito de retiro.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { 
+            text: 'Iniciar nuevo carrito', 
+            style: 'destructive',
+            onPress: () => {
+              clearCart();
+              addItem({
+                id: product.id,
+                name: product.nombre_producto,
+                price: product.precio,
+                quantity: quantity,
+                storeId: product.locatario_id,
+                storeName: product.locatarios?.nombre || 'Local',
+                notes: notes.trim()
+              });
+              router.back();
+            }
+          }
+        ]
+      );
+      return;
+    }
+
     addItem({
       id: product.id,
       name: product.nombre_producto,

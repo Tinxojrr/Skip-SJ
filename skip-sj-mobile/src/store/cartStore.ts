@@ -23,6 +23,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   
   addItem: (newItem) => set((state) => {
+    // Si el carrito ya tiene productos de otro local, sustituir para evitar órdenes mixtas
+    if (state.items.length > 0 && newItem.storeId && state.items[0].storeId && state.items[0].storeId !== newItem.storeId) {
+      return { items: [newItem] };
+    }
     const existingItem = state.items.find(item => item.id === newItem.id);
     if (existingItem) {
       return {
