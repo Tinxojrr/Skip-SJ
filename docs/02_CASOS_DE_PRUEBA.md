@@ -136,16 +136,33 @@
 
 ---
 
-### CP-CHK-002: Ejecución de Compra con Open Banking y Generación de Código
-* **Objetivo:** Simular la autorización bancaria, crear el registro del pedido en Supabase e informar el código nemotécnico de retiro.
+### CP-CHK-002: Ejecución de Compra con Pasarela Bancaria y Generación de Código
+* **Objetivo:** Autorizar el pago mediante tarjeta guardada, Webpay Plus (Transbank Sandbox) o CuentaRUT, crear el registro del pedido en Supabase e informar el código nemotécnico de retiro.
 * **Precondiciones:** Usuario autenticado con carrito activo.
 * **Pasos de Ejecución:**
-  1. Presionar el botón "Pagar con BancoEstado".
-  2. Esperar el procesamiento bancario (1.3 s).
-  3. Observar el modal de comprobante de compra exitosa.
-* **Datos de Entrada:** Pago autorizado mediante BancoEstado CuentaRUT.
-* **Resultado Esperado:** Inserción en tabla `pedidos` (estado: `pagado`), inserción en `pedido_items` con sus notas, y generación de código de 4 caracteres (ej. `K9X2`).
-* **Resultado Obtenido:** Pedido insertado en base de datos; código visible en pantalla y carrito vaciado automáticamente.
+  1. Verificar el medio de pago preseleccionado (tarjeta guardada por el alumno, Webpay Plus o CuentaRUT).
+  2. Presionar el botón "Pagar con [Método Seleccionado]".
+  3. Confirmar la autorización en el modal seguro con clave/CVV.
+  4. Observar el modal de comprobante de compra exitosa con código de mesón.
+* **Datos de Entrada:** Pago autorizado mediante tarjeta VISA de prueba (Transbank Developer 4000 0000 0000 0000) o BancoEstado CuentaRUT.
+* **Resultado Esperado:** Inserción en tabla `pedidos` (estado: `pagado`), inserción en `pedido_items` con sus notas de preparación, y generación de código de 4 caracteres (ej. `K9X2` o `SJ-QWU`).
+* **Resultado Obtenido:** Pedido insertado en base de datos; código visible en pantalla y carrito vaciado automáticamente con notificación al local.
+* **Estado:** **Aprobado**
+
+---
+
+### CP-CHK-003: Vinculación Segura de Tarjetas Bancarias en Perfil
+* **Objetivo:** Permitir al estudiante registrar y almacenar de forma segura sus tarjetas de débito o crédito bancarias en el dispositivo, reflejándose en Perfil y seleccionándose automáticamente en el Carrito.
+* **Precondiciones:** Usuario autenticado en la aplicación móvil.
+* **Pasos de Ejecución:**
+  1. Ir a la pestaña "Perfil" (`/profile`) y presionar "+ Agregar" en Métodos de Pago.
+  2. Ingresar número de tarjeta de prueba, nombre de titular, fecha de vencimiento y CVV.
+  3. Presionar "Guardar Tarjeta".
+  4. Regresar a Perfil y verificar que se muestre la tarjeta guardada con máscara (ej. `VISA •••• 0000`).
+  5. Ir a la pestaña "Carrito" y verificar que la tarjeta guardada esté seleccionada en primer lugar por defecto.
+* **Datos de Entrada:** Tarjeta VISA: `4000 0000 0000 0000`, Titular: `MARTIN ABURTO`, Vencimiento: `12/28`, CVV: `123`.
+* **Resultado Esperado:** Tarjeta persistida en almacenamiento seguro (`SecureStore`), visible en el perfil y auto-seleccionada en el botón de checkout.
+* **Resultado Obtenido:** Tarjeta vinculada exitosamente; se eliminan métodos ficticios y el carrito muestra "Pagar con VISA •••• 0000".
 * **Estado:** **Aprobado**
 
 ---

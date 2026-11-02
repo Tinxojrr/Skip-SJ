@@ -24,7 +24,7 @@
 | **RF-03** | Ficha de producto con selector de unidades y personalización con notas de cocina. | ✅ **Cumplido** | Input de texto libre transferido a la columna `notas` de `pedido_items`. |
 | **RF-04** | Sistema de favoritos interactivo con ícono de corazón y persistencia en memoria local. | ✅ **Cumplido** | Store Zustand `favoritesStore.ts` con sincronización reactiva en tiempo real. |
 | **RF-05** | Carrito de compras con cálculo automático de subtotal, recargo de servicio y total en CLP. | ✅ **Cumplido** | Resumen financiero en pantalla con recargo institucional de $300 CLP. |
-| **RF-06** | Pasarela de pago bajo estándar Open Banking para CuentaRUT BancoEstado y BAES. | ✅ **Cumplido** | Handshake bancario de 1.3 s, inserción transaccional y boleta digital. |
+| **RF-06** | Pasarela de pago con Tarjetas Guardadas, Webpay Plus (Transbank Sandbox), CuentaRUT y MACH. | ✅ **Cumplido** | Handshake de autorización de 1.2 s, inserción transaccional y boleta digital. |
 | **RF-07** | Generación de código nemotécnico de retiro de 4 caracteres (ej. `B3MR`). | ✅ **Cumplido** | Código alfanumérico generado en base de datos y visible en tarjeta activa. |
 | **RF-08** | Tablero Kanban táctil para locatarios con sincronización WebSockets en tiempo real. | ✅ **Cumplido** | Transmisión por canales Realtime de Supabase en menos de 500 ms. |
 | **RF-09** | Alerta auditiva de nueva comanda en cocina mediante Web Audio API. | ✅ **Cumplido** | Reproducción automática de campanilla de comanda (*chime bell*). |

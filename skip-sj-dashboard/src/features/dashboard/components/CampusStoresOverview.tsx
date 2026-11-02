@@ -18,7 +18,7 @@ const getStoreMetadata = (nombre: string, tipo?: string) => {
   const n = (nombre || "").toLowerCase();
   if (n.includes("castaño")) return { emoji: "🥐", categoria: "Cafetería y Empanadas" };
   if (n.includes("achoclonado")) return { emoji: "🌽", categoria: "Choclos en Vaso & Snacks" };
-  if (n.includes("comedor") || n.includes("casino")) return { emoji: "🍲", categoria: "Almuerzos & Menú Junaeb" };
+  if (n.includes("comedor") || n.includes("casino")) return { emoji: "🍲", categoria: "Almuerzos & Menú Diario" };
   if (n.includes("paradiso")) return { emoji: "🥪", categoria: "Sándwiches & Bebidas" };
   if (n.includes("local -1")) return { emoji: "🍟", categoria: "Salchipapas & Burgers" };
   return { emoji: "🏪", categoria: tipo || "Local de Campus" };

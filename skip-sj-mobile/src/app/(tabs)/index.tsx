@@ -257,7 +257,7 @@ export default function HomeScreen() {
                   <View style={{ backgroundColor: '#F2A900', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginBottom: 8 }}>
                     <Text style={{ fontSize: 10, fontFamily: 'Inter-Bold', color: '#111111', textTransform: 'uppercase' }}>Promoción</Text>
                   </View>
-                  <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Inter-Bold', marginBottom: 4 }}>Almuerzos Junaeb</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Inter-Bold', marginBottom: 4 }}>Almuerzos Duoc UC</Text>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'Inter-Regular' }}>Pide rápido sin filas en el Casino</Text>
                 </View>
                 <View style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.8 }}>

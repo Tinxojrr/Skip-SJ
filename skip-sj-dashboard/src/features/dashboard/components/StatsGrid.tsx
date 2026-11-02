@@ -25,7 +25,6 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
     tiempoPromedioMin: 0,
     horaPico: "Sin registros",
     porcentajeBancoEstado: 0,
-    porcentajeJunaeb: 0,
     comparativaPorcentaje: 0,
   });
 
@@ -93,14 +92,12 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
           }
         }
 
-        // Calcular porcentajes de método de pago
+        // Calcular porcentajes de método de pago bancario / digital
         const totalPagados = validOrders.length;
-        const junaebCount = validOrders.filter((p) => p.metodo_pago === "junaeb").length;
         const bancoEstadoCount = validOrders.filter(
           (p) => p.metodo_pago === "otro" || p.metodo_pago === "mercadopago"
         ).length;
 
-        const pctJunaeb = totalPagados > 0 ? Math.round((junaebCount / totalPagados) * 100) : 0;
         const pctBanco = totalPagados > 0 ? Math.round((bancoEstadoCount / totalPagados) * 100) : 0;
 
         setMetrics({
@@ -111,7 +108,6 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
           tiempoPromedioMin: avgMinutes,
           horaPico: peakHourStr,
           porcentajeBancoEstado: pctBanco,
-          porcentajeJunaeb: pctJunaeb,
           comparativaPorcentaje: validOrders.length > 0 ? 100 : 0,
         });
       } else {
@@ -123,7 +119,6 @@ export function StatsGrid({ periodo = "hoy" }: StatsGridProps) {
           tiempoPromedioMin: 0,
           horaPico: "Sin registros",
           porcentajeBancoEstado: 0,
-          porcentajeJunaeb: 0,
           comparativaPorcentaje: 0,
         });
       }

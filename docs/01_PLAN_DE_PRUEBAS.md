@@ -32,7 +32,7 @@ El presente Plan de Pruebas establece la estrategia, alcance, recursos, entorno,
   * Autenticación institucional con dominio `@duocuc.cl` y `@profesor.duoc.cl`.
   * Catálogo de locales (Castaño, Achoclonado, Comedor Central, Paradiso, Local -1).
   * Ficha de producto con selector de cantidad, notas de preparación y favoritos interactivos.
-  * Carrito de compras y pasarela bancaria simulada bajo estándar Open Banking (BancoEstado / BAES).
+  * Carrito de compras y pasarela bancaria directa con Tarjetas Guardadas (Débito/Crédito), Webpay Plus Developer (Transbank Sandbox), CuentaRUT BancoEstado y MACH.
   * Generación y visualización del código nemotécnico de retiro de 4 caracteres.
   * Notificaciones locales y en bandeja de avisos.
   * Configuración de usuario, cambio de contraseña institucional y conmutador de Modo Oscuro.
@@ -49,7 +49,7 @@ El presente Plan de Pruebas establece la estrategia, alcance, recursos, entorno,
   * Canales de transmisión de cambios por WebSockets (*Postgres CDC*).
 
 ### 2.2. Elementos Fuera de Alcance (Out-of-Scope)
-* Integración real con la API financiera productiva de Transbank / Webpay Plus (se implementa el flujo directo Open Banking conforme al requerimiento académico).
+* Integración en ambiente productivo comercial de Transbank o sistemas cerrados sin API pública como Junaeb BAES (se opera bajo ambiente oficial Transbank Developer Sandbox con tarjetas de prueba certificadas, CuentaRUT y MACH para el entorno académico).
 * Pruebas de compatibilidad con sistemas operativos móviles iOS inferiores a la versión 14.
 
 ---

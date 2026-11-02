@@ -28,7 +28,7 @@ En la pantalla de inicio podrás visualizar los locales gastronómicos habilitad
 ![Catálogo Principal en Modo Claro](./screenshots/inicio_catalogo_claro.png)
 
 * **Selector de Locales:** Toca cualquiera de las tarjetas circulares en la parte superior para ver únicamente la carta del local seleccionado.
-* **Filtro de Categorías:** Puedes navegar horizontalmente por categorías como *Choclos en Vaso, Empanadas y Chaparritas, Bollería, Almuerzos Junaeb, Cafetería y Frituras*.
+* **Filtro de Categorías:** Puedes navegar horizontalmente por categorías como *Choclos en Vaso, Empanadas y Chaparritas, Bollería, Almuerzos y Menús Ejecutivos, Cafetería y Frituras*.
 * **Buscador Rápido:** Utiliza la barra superior para buscar alimentos por nombre (ej: "empanada", "café", "choclo").
 
 ---
@@ -53,9 +53,11 @@ Una vez agregados tus alimentos, dirígete a la pestaña **"Carrito"** en la bar
 1. **Revisión del Carrito:** Comprueba los productos, cantidades y tus notas de preparación asignadas.
 2. **Resumen de Cobro:** Verifica el desglose de Subtotal, Cargo por Servicio ($300) y el Total a Pagar en pesos chilenos.
 3. **Método de Pago:** Selecciona tu medio de pago preferido:
-   * **BancoEstado (CuentaRUT):** Transferencia directa e instantánea mediante protocolo Open Banking sin comisión.
-   * **Tarjeta Junaeb BAES:** Validación para canje de saldo en almuerzos institucionales de la sede.
-4. **Pagar Pedido:** Presiona el botón principal de pago. El sistema procesará la autorización bancaria de forma segura en 1 segundo y generará tu pedido.
+   * **Tarjeta Bancaria Guardada (Débito/Crédito):** Tu tarjeta VISA o Mastercard vinculada para pagar en 1 toque con CVV seguro.
+   * **Webpay Plus (Transbank Sandbox):** Pasarela oficial de integración para abonar con cualquier tarjeta bancaria nacional.
+   * **BancoEstado (CuentaRUT):** Transferencia directa e instantánea mediante protocolo Open Banking sin comisión POS.
+   * **Billeteras Digitales (MACH):** Pago directo y seguro desde tu cuenta digital.
+4. **Pagar Pedido:** Presiona el botón principal de pago (ej. *"Pagar con VISA •••• 0000"* o *"Pagar con BancoEstado"*). El sistema procesará la autorización bancaria de forma segura en 1 segundo y generará tu pedido con código nemotécnico de retiro.
 
 ---
 
@@ -78,6 +80,7 @@ En la pestaña **"Perfil"**, puedes personalizar tu experiencia de usuario:
 ![Perfil del Alumno y Conmutador de Modo Oscuro](./screenshots/perfil_modo_oscuro.png)
 
 * **Modo Oscuro (Obsidian Theme):** Activa el interruptor *"Modo Oscuro"* para cambiar la interfaz a un elegante fondo nocturno negro azabache (`#09090B`) que ahorra batería en pantallas OLED y mejora la visibilidad en ambientes con poca luz.
+* **Métodos de Pago:** Administra tus tarjetas bancarias de débito o crédito de manera segura mediante almacenamiento encriptado local (`SecureStore`), vinculando tus tarjetas para pagar tus pedidos sin reingresar datos cada vez.
 * **Editar Perfil:** Pulsa en *"Editar perfil"* para definir tu **apodo** (nombre corto con el que te llamará el personal de cocina), revisar tus datos institucionales y actualizar tu avatar.
 * **Historial de Pedidos:** Revisa las boletas digitales de tus compras pasadas y códigos canjeados.
 

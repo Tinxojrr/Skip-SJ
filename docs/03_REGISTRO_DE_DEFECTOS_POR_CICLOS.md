@@ -151,9 +151,25 @@
 * **Ciclo:** Ciclo 4 (Validación Final)
 * **Módulo:** `profile.tsx` / `security.tsx`
 * **Criticidad:** **Baja**
-* **Descripción del Defecto:** Al hacer clic en las tarjetas de pago de Junaeb BAES, BancoEstado o en la gestión de dispositivos, saltaba una alerta diciendo *"Próximamente / Esta función estará disponible pronto"*.
+* **Descripción del Defecto:** Al hacer clic en las tarjetas de pago o en la gestión de dispositivos, saltaba una alerta diciendo *"Próximamente / Esta función estará disponible pronto"*.
 * **Causa Raíz:** Restos de funciones placeholder `handlePressSimulate` y `handleSimulateAction`.
 * **Acción Correctiva:** Conexión de modales informativos institucionales reales y redirección a la pantalla de gestión de tarjetas `add-payment.tsx`.
 * **Responsable:** Desarrollador Móvil.
 * **Resultado de Re-validación:** **Cerrado / Validado (Aprobado).** Se eliminó todo rastro de texto de simulación en la app.
+
+---
+
+### DEF-012: Métodos de pago ficticios (BAES no integrable y tarjetas estáticas no asociadas en perfil)
+* **Ciclo:** Ciclo 5 (Auditoría de Pagos y Seguridad)
+* **Módulo:** `cart.tsx`, `profile.tsx`, `paymentStore.ts`, `paymentGateway.ts`
+* **Criticidad:** **Alta**
+* **Descripción del Defecto:** La app presentaba la opción de pago Junaeb BAES (que no cuenta con API pública de desarrollador en Chile) y mostraba en el Perfil tarjetas estáticas claiming estar "vinculadas" que el usuario nunca asoció. Además, el Carrito forzaba a BancoEstado como método predeterminado en lugar de la tarjeta agregada por el alumno.
+* **Causa Raíz:** Inclusión de pasarelas cerradas (BAES) sin sandbox de desarrollo, componentes estáticos mockeados en `profile.tsx` y falta de sincronización de prioridad en el hook de selección de `cart.tsx`.
+* **Acción Correctiva:**
+  1. Purga total de la opción Junaeb BAES en móvil y dashboard.
+  2. Implementación de almacenamiento seguro encriptado (`SecureStore`) para las tarjetas reales ingresadas por el estudiante.
+  3. Eliminación de las tarjetas hardcodeadas en `profile.tsx`; ahora el perfil muestra un estado vacío cuando no hay tarjetas o lista únicamente las tarjetas reales del usuario.
+  4. Modificación de `cart.tsx` para colocar las tarjetas guardadas en primer lugar (índice 0) y auto-seleccionar la tarjeta del alumno por defecto para el pago con un toque.
+* **Responsable:** Desarrollador Móvil / Fullstack.
+* **Resultado de Re-validación:** **Cerrado / Validado (Aprobado).** La pasarela opera fluidamente con tarjetas reales de prueba Transbank Developer (4000 0000 0000 0000), CuentaRUT y MACH, seleccionando la tarjeta del estudiante automáticamente.
 

@@ -31,7 +31,8 @@ El ecosistema **SKIP Duoc UC** está construido bajo una arquitectura desacoplad
 ### Componentes del Sistema:
 1. **Frontend Móvil (`skip-sj-mobile`):**
    * Framework: React Native con Expo Router (File-based Routing).
-   * Estado Global: Zustand (`authStore`, `cartStore`, `favoritesStore`, `themeStore`).
+   * Estado Global: Zustand (`authStore`, `cartStore`, `favoritesStore`, `themeStore`, `paymentStore`).
+   * Pasarela de Pago: Webpay Plus Transbank Sandbox (Comercio `597055555532`), CuentaRUT BancoEstado y almacenamiento seguro con `expo-secure-store`.
    * Animaciones y Gestos: React Native Reanimated v3.
    * Iconografía y UI: Lucide React Native, Expo Blur.
 2. **Frontend Web (`skip-sj-dashboard`):**
