@@ -11,8 +11,10 @@ import {
   RefreshCw, 
   PackageCheck,
   Volume2,
-  MessageSquare
+  MessageSquare,
+  Printer
 } from 'lucide-react';
+import { TicketTermicoModal } from './components/TicketTermicoModal';
 
 type EstadoPedido = 'pendiente_pago' | 'pagado' | 'en_preparacion' | 'listo_retiro' | 'completado';
 
@@ -49,6 +51,7 @@ export const KanbanBoard = () => {
   const [nombreLocal, setNombreLocal] = useState('Cargando local...');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [pedidoTicket, setPedidoTicket] = useState<Pedido | null>(null);
 
   // 1. Obtener datos del Local
   useEffect(() => {
@@ -325,6 +328,7 @@ export const KanbanBoard = () => {
                   formatearTiempo={formatearTiempo}
                   formatearPrecio={formatearPrecio}
                   obtenerNombreCliente={obtenerNombreCliente}
+                  onVerTicket={setPedidoTicket}
                   actionButton={
                     <button
                       onClick={() => cambiarEstadoPedido(pedido.id, 'en_preparacion')}
@@ -368,6 +372,7 @@ export const KanbanBoard = () => {
                   formatearTiempo={formatearTiempo}
                   formatearPrecio={formatearPrecio}
                   obtenerNombreCliente={obtenerNombreCliente}
+                  onVerTicket={setPedidoTicket}
                   actionButton={
                     <button
                       onClick={() => cambiarEstadoPedido(pedido.id, 'listo_retiro')}
@@ -412,6 +417,7 @@ export const KanbanBoard = () => {
                   formatearPrecio={formatearPrecio}
                   obtenerNombreCliente={obtenerNombreCliente}
                   isReadyToPickUp
+                  onVerTicket={setPedidoTicket}
                   actionButton={
                     <button
                       onClick={() => cambiarEstadoPedido(pedido.id, 'completado')}
@@ -429,6 +435,15 @@ export const KanbanBoard = () => {
         </div>
 
       </div>
+
+      {/* Modal de Ticket Térmico POS */}
+      {pedidoTicket && (
+        <TicketTermicoModal
+          pedido={pedidoTicket}
+          nombreLocal={nombreLocal}
+          onClose={() => setPedidoTicket(null)}
+        />
+      )}
     </div>
   );
 };
@@ -440,6 +455,7 @@ function PedidoCard({
   formatearPrecio,
   obtenerNombreCliente,
   actionButton,
+  onVerTicket,
   isReadyToPickUp = false
 }: {
   pedido: Pedido;
@@ -447,6 +463,7 @@ function PedidoCard({
   formatearPrecio: (m: number) => string;
   obtenerNombreCliente: (p: Pedido) => string;
   actionButton: React.ReactNode;
+  onVerTicket: (p: Pedido) => void;
   isReadyToPickUp?: boolean;
 }) {
   const items = pedido.pedido_items || [];
@@ -457,14 +474,24 @@ function PedidoCard({
         ? 'border-emerald-500/40 ring-1 ring-emerald-500/20' 
         : 'border-zinc-200 dark:border-zinc-800/90'
     }`}>
-      {/* Header: ID y Hora */}
+      {/* Header: ID, Botón Ticket y Hora */}
       <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800/60">
         <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">
           #{pedido.id.substring(0, 6).toUpperCase()}
         </span>
-        <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
-          <Clock className="w-3 h-3" />
-          <span>{formatearTiempo(pedido.created_at)}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onVerTicket(pedido)}
+            className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-amber-500 dark:text-zinc-400 dark:hover:text-amber-400 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-amber-500/10 dark:hover:bg-amber-500/10 px-2 py-0.5 rounded-md transition border border-zinc-200 dark:border-zinc-700/60 cursor-pointer"
+            title="Ver e imprimir ticket térmico de cocina"
+          >
+            <Printer className="w-3 h-3 text-[#F5A623]" />
+            <span>Ticket</span>
+          </button>
+          <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
+            <Clock className="w-3 h-3" />
+            <span>{formatearTiempo(pedido.created_at)}</span>
+          </div>
         </div>
       </div>
 

@@ -9,8 +9,10 @@ import {
   CheckCircle2, 
   XCircle, 
   RefreshCw,
-  ShoppingBag
+  ShoppingBag,
+  Printer
 } from 'lucide-react';
+import { TicketTermicoModal } from '../dashboard/components/TicketTermicoModal';
 
 interface PedidoHistorial {
   id: string;
@@ -43,6 +45,7 @@ export const HistorialPedidosPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [pedidoTicket, setPedidoTicket] = useState<PedidoHistorial | null>(null);
 
   const fetchHistorial = useCallback(async () => {
     if (!locatarioId && role !== 'super_admin') {
@@ -283,7 +286,8 @@ export const HistorialPedidosPage = () => {
                   <th className="p-3.5">Detalle de Productos</th>
                   <th className="p-3.5">Total</th>
                   <th className="p-3.5">Estado</th>
-                  <th className="p-3.5 pr-5">Fecha y Hora</th>
+                  <th className="p-3.5">Fecha y Hora</th>
+                  <th className="p-3.5 pr-5 text-right">Comanda</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
@@ -331,9 +335,19 @@ export const HistorialPedidosPage = () => {
                       <td className="p-3.5">
                         {getStatusBadge(p.estado)}
                       </td>
-                      <td className="p-3.5 pr-5 font-mono text-[11px] text-zinc-400 whitespace-nowrap">
+                      <td className="p-3.5 font-mono text-[11px] text-zinc-400 whitespace-nowrap">
                         <div>{fecha.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</div>
                         <div className="text-[10px] text-zinc-500">{fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </td>
+                      <td className="p-3.5 pr-5 text-right">
+                        <button
+                          onClick={() => setPedidoTicket(p)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg bg-zinc-100 hover:bg-amber-500/10 text-zinc-700 hover:text-amber-500 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-amber-400 border border-zinc-200 dark:border-zinc-700/60 transition cursor-pointer"
+                          title="Ver ticket térmico"
+                        >
+                          <Printer className="w-3 h-3 text-[#F5A623]" />
+                          <span>Ticket</span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -343,6 +357,15 @@ export const HistorialPedidosPage = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Ticket Térmico POS */}
+      {pedidoTicket && (
+        <TicketTermicoModal
+          pedido={pedidoTicket}
+          nombreLocal={nombreLocal || 'Casino San Joaquín'}
+          onClose={() => setPedidoTicket(null)}
+        />
+      )}
     </div>
   );
 };

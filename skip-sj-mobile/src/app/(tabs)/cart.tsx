@@ -829,8 +829,26 @@ export default function CartScreen() {
                     </Text>
                   </View>
 
-                  <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>
-                    Dicta este código en el mesón de {storeName} para retirar
+                  {/* Simulación Código de Barras Tótem */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 26, gap: 2, marginTop: 12, marginBottom: 2 }}>
+                    {[2, 4, 1, 3, 5, 2, 1, 4, 2, 3, 1, 5, 2, 3, 1, 4, 2, 1, 3, 4, 2, 3].map((w, i) => (
+                      <View 
+                        key={i} 
+                        style={{ 
+                          width: w, 
+                          height: 22, 
+                          backgroundColor: i % 5 === 0 ? '#38BDF8' : '#FFFFFF', 
+                          borderRadius: 1 
+                        }} 
+                      />
+                    ))}
+                  </View>
+                  <Text style={{ fontSize: 9, fontFamily: 'monospace', color: '#64748B', letterSpacing: 3, marginTop: 2 }}>
+                    *{codigoRetiroGenerado}*
+                  </Text>
+
+                  <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#94A3B8', marginTop: 8, textAlign: 'center' }}>
+                    Dicta este código o escanéalo en el tótem de {storeName}
                   </Text>
 
                   {comprobantePago?.authorizationCode && (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag, History } from 'lucide-react-native';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag, History, QrCode } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -194,9 +194,57 @@ export default function OrderHistoryScreen() {
                 </View>
 
                 {order.codigo_retiro && (
-                  <View style={{ backgroundColor: isDarkMode ? '#1E293B' : 'rgba(0,61,122,0.05)', borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: isDarkMode ? '#38BDF8' : 'transparent' }}>
-                    <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: textSecondary }}>CÓDIGO DE RETIRO</Text>
-                    <Text style={{ fontFamily: 'Inter-Bold', fontSize: 24, color: isDarkMode ? '#38BDF8' : '#003D7A', marginTop: 2, letterSpacing: 2 }}>{order.codigo_retiro}</Text>
+                  <View style={{ 
+                    backgroundColor: isDarkMode ? '#0F172A' : '#F8FAFC', 
+                    borderRadius: 16, 
+                    padding: 14, 
+                    alignItems: 'center', 
+                    marginBottom: 12, 
+                    borderWidth: 1.5, 
+                    borderColor: isDarkMode ? '#1E293B' : '#E2E8F0' 
+                  }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 6 }}>
+                      <Text style={{ fontFamily: 'Inter-Bold', fontSize: 10, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Pase de Retiro Digital
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <QrCode size={12} color="#F2A900" />
+                        <Text style={{ fontFamily: 'Inter-Bold', fontSize: 10, color: '#F2A900' }}>Tótem / Mesón</Text>
+                      </View>
+                    </View>
+
+                    {/* Código Grande */}
+                    <View style={{ 
+                      backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF', 
+                      paddingHorizontal: 22, 
+                      paddingVertical: 6, 
+                      borderRadius: 12, 
+                      borderWidth: 1.5, 
+                      borderColor: isDarkMode ? '#38BDF8' : '#003D7A',
+                      marginVertical: 4
+                    }}>
+                      <Text style={{ fontFamily: 'Inter-Bold', fontSize: 24, color: isDarkMode ? '#38BDF8' : '#003D7A', letterSpacing: 4 }}>
+                        {order.codigo_retiro}
+                      </Text>
+                    </View>
+
+                    {/* Simulación Código de Barras POS */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 26, gap: 2, marginTop: 6, marginBottom: 2 }}>
+                      {[2, 3, 1, 4, 2, 1, 3, 5, 2, 4, 1, 3, 2, 4, 1, 5, 2, 3, 1, 4, 2, 3].map((w, i) => (
+                        <View 
+                          key={i} 
+                          style={{ 
+                            width: w, 
+                            height: 22, 
+                            backgroundColor: isDarkMode ? (i % 6 === 0 ? '#38BDF8' : '#FFFFFF') : (i % 6 === 0 ? '#F2A900' : '#111111'), 
+                            borderRadius: 1 
+                          }} 
+                        />
+                      ))}
+                    </View>
+                    <Text style={{ fontSize: 9, fontFamily: 'monospace', color: textSecondary, letterSpacing: 2 }}>
+                      *{order.codigo_retiro}*
+                    </Text>
                   </View>
                 )}
 
