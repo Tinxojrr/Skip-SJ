@@ -232,3 +232,4 @@ export const TicketTermicoModal: React.FC<TicketTermicoModalProps> = ({
 };
 
 export default TicketTermicoModal;
+
