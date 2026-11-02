@@ -1,7 +1,6 @@
 -- ==========================================================
 -- SCRIPT DE VINCULACIÓN DE LOCALES Y PERMISOS RLS EN SUPABASE
 -- Sistema: SKIP Duoc UC (Sede San Joaquín)
--- Ejecutar en: https://supabase.com/dashboard/project/xillpulfdzkntplmquez/sql/new
 -- ==========================================================
 
 -- 1. ASEGURAR ROLES EN TABLA USUARIOS PARA LAS CUENTAS ADMIN / LOCALES
@@ -18,7 +17,7 @@ UPDATE public.locatarios
 SET usuario_admin_id = '48d92c8d-6142-4644-9efc-d58dbed3b2f6'
 WHERE id = 'fcb8c9bd-96af-407e-a4ab-31700f561cab' OR nombre ILIKE '%Paradiso%';
 
--- Vincular Castaño, Achoclonado, Comedor Central y Local -1 con sus administradores correspondientes si existen en auth.users
+-- Vincular Castaño, Achoclonado, Comedor Central y Local -1 si existen
 DO $$
 DECLARE
     u_castano UUID;
@@ -47,36 +46,24 @@ BEGIN
     END IF;
 END $$;
 
--- 3. HABILITAR PERMISOS RLS EN PEDIDOS PARA QUE LOS LOCALES Y SUPER ADMIN PUEDAN VER Y GESTIONAR
+-- 3. HABILITAR PERMISOS RLS EN PEDIDOS
 ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
 
--- Eliminar políticas antiguas si existían
-DROP POLICY IF EXISTS "Locatarios y Admins gestionan pedidos de su local" ON public.pedidos;
-DROP POLICY IF EXISTS "Permitir ver pedidos a administradores de tienda" ON public.pedidos;
-DROP POLICY IF EXISTS "Locatarios ven sus pedidos" ON public.pedidos;
+DROP POLICY IF EXISTS "Gestion de pedidos segun rol y local" ON public.pedidos;
 
--- Nueva política completa: 
--- Permite SELECT / UPDATE / ALL a:
--- a) El alumno que hizo el pedido (auth.uid() = usuario_id)
--- b) El administrador/cajero del local correspondiente
--- c) El Super Admin institucional
 CREATE POLICY "Gestion de pedidos segun rol y local" ON public.pedidos
 FOR ALL USING (
-    -- Alumno dueño del pedido
     auth.uid() = usuario_id
-    -- O Administrador/Cajero asignado a este local
     OR EXISTS (
         SELECT 1 FROM public.locatarios
         WHERE public.locatarios.id = public.pedidos.locatario_id
         AND public.locatarios.usuario_admin_id = auth.uid()
     )
-    -- O Super Administrador de la plataforma
     OR EXISTS (
         SELECT 1 FROM public.usuarios
         WHERE public.usuarios.id = auth.uid()
         AND public.usuarios.rol = 'super_admin'
     )
-    -- O cuentas de desarrollo del casino
     OR (auth.jwt() ->> 'email') IN ('paradiso@skipsj.cl', 'admin@skipsj.cl', 'castano@skipsj.cl', 'achoclonado@skipsj.cl', 'comedor@skipsj.cl', 'local1@skipsj.cl')
 )
 WITH CHECK (
@@ -94,16 +81,16 @@ WITH CHECK (
     OR (auth.jwt() ->> 'email') IN ('paradiso@skipsj.cl', 'admin@skipsj.cl', 'castano@skipsj.cl', 'achoclonado@skipsj.cl', 'comedor@skipsj.cl', 'local1@skipsj.cl')
 );
 
--- 4. HABILITAR ACCESO RLS A DETALLE_PEDIDOS
-ALTER TABLE public.detalle_pedidos ENABLE ROW LEVEL SECURITY;
+-- 4. HABILITAR PERMISOS RLS EN PEDIDO_ITEMS
+ALTER TABLE public.pedido_items ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Gestion detalle_pedidos segun rol" ON public.detalle_pedidos;
+DROP POLICY IF EXISTS "Gestion pedido_items segun rol" ON public.pedido_items;
 
-CREATE POLICY "Gestion detalle_pedidos segun rol" ON public.detalle_pedidos
+CREATE POLICY "Gestion pedido_items segun rol" ON public.pedido_items
 FOR ALL USING (
     EXISTS (
         SELECT 1 FROM public.pedidos
-        WHERE public.pedidos.id = public.detalle_pedidos.pedido_id
+        WHERE public.pedidos.id = public.pedido_items.pedido_id
         AND (
             public.pedidos.usuario_id = auth.uid()
             OR EXISTS (
@@ -121,7 +108,7 @@ FOR ALL USING (
     )
 );
 
--- 5. VERIFICACIÓN DE ESTADO
+-- 5. VERIFICACIÓN FINAL
 SELECT 
     l.id AS local_id,
     l.nombre AS local,

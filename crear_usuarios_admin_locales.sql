@@ -174,3 +174,4 @@ SELECT
 FROM public.locatarios l
 LEFT JOIN public.usuarios u ON u.id = l.usuario_admin_id
 ORDER BY l.nombre;
+

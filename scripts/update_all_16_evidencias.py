@@ -78,3 +78,4 @@ if __name__ == '__main__':
         matching = [f for f in files if f.startswith(f"{i}. ") or f.startswith(f"{i} ")]
         if matching:
             update_file(matching[0])
+
