@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -126,33 +126,36 @@ export default function CartScreen() {
   
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { session, profile } = useAuthStore();
-  const { savedCards } = usePaymentStore();
+  const { savedCards, selectedCardId } = usePaymentStore();
   const router = useRouter();
 
-  // Opciones completas de pago (BancoEstado + Webpay Plus + Tarjetas Guardadas + Otros Bancos)
+  // Helper para convertir una SavedCard en PaymentOption
+  const formatCardOption = (c: SavedCard): PaymentOption => ({
+    id: c.id,
+    nombre: `${c.brand.toUpperCase()} •••• ${c.cardLast4}`,
+    tipoCuenta: `Vence ${c.expiry} • ${c.cardName}`,
+    sigla: c.brand === 'visa' ? 'VISA' : 'MC',
+    colorBg: c.brand === 'visa' ? '#1D4ED8' : '#EA580C',
+    colorSecundario: '#1E293B',
+    badge: 'Guardada',
+    passNombre: 'CVV Seguro',
+    isCard: true
+  });
+
+  // Opciones completas de pago: TARJETAS GUARDADAS PRIMERO, luego Webpay Plus y bancos
   const paymentOptions = useMemo<PaymentOption[]>(() => {
     const list: PaymentOption[] = [];
 
-    // 1. BancoEstado CuentaRUT (Por defecto)
-    list.push(BASE_BANCOS[0]);
+    // 1. Tarjetas guardadas del usuario (Prioridad alta)
+    savedCards.forEach(c => {
+      list.push(formatCardOption(c));
+    });
 
-    // 2. Webpay Plus Transbank Developer
+    // 2. Webpay Plus Transbank Developer (Para pagar con cualquier otra tarjeta)
     list.push(BASE_BANCOS[1]);
 
-    // 3. Tarjetas guardadas por el alumno
-    savedCards.forEach(c => {
-      list.push({
-        id: c.id,
-        nombre: `${c.brand.toUpperCase()} •••• ${c.cardLast4}`,
-        tipoCuenta: `Vence ${c.expiry} • ${c.cardName}`,
-        sigla: c.brand === 'visa' ? 'VISA' : 'MC',
-        colorBg: c.brand === 'visa' ? '#1D4ED8' : '#EA580C',
-        colorSecundario: '#1E293B',
-        badge: 'Guardada',
-        passNombre: 'CVV Seguro',
-        isCard: true
-      });
-    });
+    // 3. BancoEstado CuentaRUT
+    list.push(BASE_BANCOS[0]);
 
     // 4. Otros bancos chilenos
     BASE_BANCOS.slice(2).forEach(b => list.push(b));
@@ -160,8 +163,26 @@ export default function CartScreen() {
     return list;
   }, [savedCards]);
 
-  // Estados de Pasarela
-  const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(paymentOptions[0] || BASE_BANCOS[0]);
+  // Estados de Pasarela: por defecto la tarjeta guardada si existe
+  const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(() => {
+    if (savedCards.length > 0) {
+      const activeCard = savedCards.find(c => c.id === selectedCardId) || savedCards[0];
+      return formatCardOption(activeCard);
+    }
+    return BASE_BANCOS[1]; // Webpay Plus por defecto
+  });
+
+  // Mantener sincronizado si el usuario agrega o selecciona una tarjeta en add-payment
+  useEffect(() => {
+    if (savedCards.length > 0) {
+      const activeCard = savedCards.find(c => c.id === selectedCardId) || savedCards[0];
+      // Si la opción seleccionada actual ya no existe o es un método genérico anterior
+      const isCurrentValidSaved = savedCards.some(c => c.id === bancoSeleccionado.id);
+      if (!isCurrentValidSaved) {
+        setBancoSeleccionado(formatCardOption(activeCard));
+      }
+    }
+  }, [savedCards, selectedCardId]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalStep, setModalStep] = useState<'seleccionar_banco' | 'confirmar' | 'procesando' | 'exito'>('confirmar');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -485,7 +506,11 @@ export default function CartScreen() {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 12 }}>
-            <Building2 size={18} color="#FFFFFF" />
+            {bancoSeleccionado.isCard || bancoSeleccionado.id === 'webpay' ? (
+              <CreditCard size={18} color="#FFFFFF" />
+            ) : (
+              <Building2 size={18} color="#FFFFFF" />
+            )}
             <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 15 }} numberOfLines={1}>
               Pagar con {bancoSeleccionado.nombre}
             </Text>

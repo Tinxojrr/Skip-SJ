@@ -80,28 +80,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const handlePressWebpay = () => {
-    Alert.alert(
-      "Webpay Plus (Transbank Sandbox)",
-      `Ambiente: Integración Oficial\nComercio: 597055555532\n\nPermite pagar con tarjetas de débito (Redcompra) y crédito bancarias en modo developer.`,
-      [
-        { text: "Administrar Tarjetas", onPress: () => router.push('/add-payment') },
-        { text: "Cerrar", style: "cancel" }
-      ]
-    );
-  };
-
-  const handlePressBank = () => {
-    Alert.alert(
-      "BancoEstado (CuentaRUT)",
-      `Estado: Vinculado vía Open Banking\nTitular: ${displayName}\n\nPermite transferencias inmediatas de pago sin costo adicional en el casino.`,
-      [
-        { text: "Administrar Métodos", onPress: () => router.push('/add-payment') },
-        { text: "Cerrar", style: "cancel" }
-      ]
-    );
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
@@ -182,104 +160,63 @@ export default function ProfileScreen() {
           </View>
 
           <View style={{ gap: 12 }}>
-            {/* Webpay Plus Transbank Card */}
-            <TouchableOpacity 
-              onPress={handlePressWebpay}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: cardBg,
-                padding: 16,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: isDarkMode ? 'rgba(225,25,56,0.4)' : 'rgba(225,25,56,0.2)',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.03,
-                shadowRadius: 8,
-                elevation: 1
-              }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(225,25,56,0.12)', justifyContent: 'center', alignItems: 'center' }}>
-                <Wallet color="#E11938" size={20} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
-                  Webpay Plus (Transbank)
-                </Text>
-                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
-                  Modo Developer Sandbox (Comercio 597055555532)
-                </Text>
-              </View>
-              <ChevronRight color={textSecondary} size={20} />
-            </TouchableOpacity>
-
-            {/* Banco Directo */}
-            <TouchableOpacity 
-              onPress={handlePressBank}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: cardBg,
-                padding: 16,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: borderColor,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.03,
-                shadowRadius: 8,
-                elevation: 1
-              }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isDarkMode ? 'rgba(0,61,122,0.2)' : 'rgba(17,17,17,0.05)', justifyContent: 'center', alignItems: 'center' }}>
-                <CreditCard color={iconColor} size={20} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
-                  BancoEstado (CuentaRUT)
-                </Text>
-                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
-                  Open Banking directo vinculado
-                </Text>
-              </View>
-              <ChevronRight color={textSecondary} size={20} />
-            </TouchableOpacity>
-
-            {/* Tarjetas Bancarias Guardadas por el Usuario */}
-            {savedCards.map((c) => (
-              <TouchableOpacity 
-                key={c.id}
+            {savedCards.length === 0 ? (
+              <TouchableOpacity
                 onPress={() => router.push('/add-payment')}
                 style={{
-                  flexDirection: 'row',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   backgroundColor: cardBg,
-                  padding: 16,
+                  padding: 24,
                   borderRadius: 20,
                   borderWidth: 1,
                   borderColor: borderColor,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.03,
-                  shadowRadius: 8,
-                  elevation: 1
+                  borderStyle: 'dashed'
                 }}
               >
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.brand === 'visa' ? 'rgba(29,78,216,0.15)' : 'rgba(234,88,12,0.15)', justifyContent: 'center', alignItems: 'center' }}>
-                  <CreditCard color={c.brand === 'visa' ? '#2563EB' : '#F97316'} size={20} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
-                    {c.brand.toUpperCase()} {c.cardNumber}
-                  </Text>
-                  <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
-                    Vence: {c.expiry} • {c.cardName}
-                  </Text>
-                </View>
-                <ChevronRight color={textSecondary} size={20} />
+                <CreditCard color={textSecondary} size={28} style={{ marginBottom: 8 }} />
+                <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 14 }}>
+                  No tienes tarjetas vinculadas
+                </Text>
+                <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+                  Toca en + Agregar para registrar tu tarjeta de débito o crédito
+                </Text>
               </TouchableOpacity>
-            ))}
+            ) : (
+              savedCards.map((c) => (
+                <TouchableOpacity 
+                  key={c.id}
+                  onPress={() => router.push('/add-payment')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: cardBg,
+                    padding: 16,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: borderColor,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.03,
+                    shadowRadius: 8,
+                    elevation: 1
+                  }}
+                >
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.brand === 'visa' ? 'rgba(29,78,216,0.15)' : 'rgba(234,88,12,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                    <CreditCard color={c.brand === 'visa' ? '#2563EB' : '#F97316'} size={20} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 16 }}>
+                    <Text style={{ color: textPrimary, fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 }}>
+                      {c.brand.toUpperCase()} {c.cardNumber}
+                    </Text>
+                    <Text style={{ color: textSecondary, fontFamily: 'Inter-Regular', fontSize: 12 }}>
+                      Vence: {c.expiry} • {c.cardName}
+                    </Text>
+                  </View>
+                  <ChevronRight color={textSecondary} size={20} />
+                </TouchableOpacity>
+              ))
+            )}
           </View>
         </View>
 

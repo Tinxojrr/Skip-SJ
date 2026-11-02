@@ -43,7 +43,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         set({ savedCards: parsed });
         const defaultCard = parsed.find(c => c.isDefault) || parsed[0];
         if (defaultCard) {
-          set({ selectedCardId: defaultCard.id });
+          set({ selectedCardId: defaultCard.id, selectedPaymentMethod: 'card' });
         }
       }
     } catch (e) {
@@ -74,7 +74,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     };
 
     const updatedCards = [...get().savedCards, newCard];
-    set({ savedCards: updatedCards, selectedCardId: newCard.id });
+    set({ savedCards: updatedCards, selectedCardId: newCard.id, selectedPaymentMethod: 'card' });
     await SecureStore.setItemAsync(CARDS_STORAGE_KEY, JSON.stringify(updatedCards));
     return newCard;
   },
