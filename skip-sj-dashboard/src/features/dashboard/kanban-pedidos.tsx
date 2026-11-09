@@ -31,6 +31,7 @@ interface PedidoItem {
 
 interface Pedido {
   id: string;
+  usuario_id?: string;
   estado: EstadoPedido;
   hora_retiro_estimada: string;
   monto_total: number;
@@ -76,6 +77,7 @@ export const KanbanBoard = () => {
         .from('pedidos')
         .select(`
           id,
+          usuario_id,
           estado,
           hora_retiro_estimada,
           monto_total,
@@ -113,6 +115,7 @@ export const KanbanBoard = () => {
           .from('pedidos')
           .select(`
             id,
+            usuario_id,
             estado,
             hora_retiro_estimada,
             monto_total,
@@ -214,6 +217,8 @@ export const KanbanBoard = () => {
 
   const cambiarEstadoPedido = async (id: string, nuevoEstado: EstadoPedido) => {
     setUpdatingId(id);
+    const pedidoObj = pedidos.find(p => p.id === id);
+
     const { error } = await supabase
       .from('pedidos')
       .update({ estado: nuevoEstado, updated_at: new Date().toISOString() })
@@ -225,6 +230,24 @@ export const KanbanBoard = () => {
       console.error('Error actualizando pedido:', error);
       alert('Hubo un error al actualizar el estado del pedido');
     } else {
+      // Registrar notificación en la base de datos para el alumno
+      if (pedidoObj?.usuario_id) {
+        let tipo = 'pedido_listo';
+        if (nuevoEstado === 'completado') tipo = 'completado';
+        else if (nuevoEstado === 'en_preparacion') tipo = 'en_preparacion';
+
+        supabase
+          .from('notificaciones')
+          .insert({
+            pedido_id: id,
+            usuario_id: pedidoObj.usuario_id,
+            tipo,
+            enviado: true,
+          })
+          .then(() => {})
+          .catch((e) => console.warn('Aviso inserción notificación:', e));
+      }
+
       setPedidos(prev => prev.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));
       if (nuevoEstado === 'completado') {
         setPedidos(prev => prev.filter(p => p.id !== id));

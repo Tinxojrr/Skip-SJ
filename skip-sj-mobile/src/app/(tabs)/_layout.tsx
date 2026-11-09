@@ -1,13 +1,16 @@
 import { Tabs } from 'expo-router';
 import { Home, ShoppingCart, User } from 'lucide-react-native';
 import { useThemeStore } from '../../store/themeStore';
+import { GlobalOrderNotifications } from '../../components/GlobalOrderNotifications';
 
 export default function TabsLayout() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
 
   return (
-    <Tabs 
-      key={isDarkMode ? 'dark-tabs' : 'light-tabs'}
+    <>
+      <GlobalOrderNotifications />
+      <Tabs 
+        key={isDarkMode ? 'dark-tabs' : 'light-tabs'}
       screenOptions={{ 
         headerShown: false,
         tabBarActiveTintColor: isDarkMode ? '#F2A900' : '#111111',
@@ -44,5 +47,6 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

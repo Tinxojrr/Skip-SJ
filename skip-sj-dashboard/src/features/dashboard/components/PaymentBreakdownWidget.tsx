@@ -92,7 +92,7 @@ export function PaymentBreakdownWidget() {
       porcentaje: breakdown.bancoEstadoPct,
       color: "bg-[#004B93]",
       barColor: "bg-blue-600",
-      badge: "Open Banking",
+      badge: "DEV · Open Banking",
       icon: CreditCard,
     },
     {
@@ -103,7 +103,7 @@ export function PaymentBreakdownWidget() {
       porcentaje: breakdown.webpayPct,
       color: "bg-[#E11938]",
       barColor: "bg-rose-600",
-      badge: "Sandbox Oficial",
+      badge: "DEV · Sandbox Oficial",
       icon: Wallet,
     },
     {
@@ -114,7 +114,7 @@ export function PaymentBreakdownWidget() {
       porcentaje: breakdown.otrosPct,
       color: "bg-[#6C00FF]",
       barColor: "bg-purple-600",
-      badge: "Digital",
+      badge: "DEV · Simulado",
       icon: DollarSign,
     },
   ];
@@ -184,7 +184,7 @@ export function PaymentBreakdownWidget() {
                       <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                         {m.name}
                       </p>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-white dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                         {m.badge}
                       </span>
                     </div>

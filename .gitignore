@@ -5,4 +5,8 @@ dist/
 ~$*.docx
 *.log
 *.sql
+generate_*.py
+evidencias/Fase 3/cronograma_*
+evidencias/Fase 3/esquema_*
+*.pptx.pptx
 
