@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag, History, QrCode } from 'lucide-react-native';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, ShoppingBag, History, QrCode, ShieldCheck } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -44,9 +44,10 @@ export default function OrderHistoryScreen() {
 
     if (!session?.user?.id) return;
 
-    // Escuchar cambios de estado en tiempo real
+    // Escuchar cambios de estado en tiempo real con canal único por sesión
+    const channelName = `history-pedidos-${session.user.id}-${Date.now()}`;
     const channel = supabase
-      .channel('public:pedidos')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -259,6 +260,13 @@ export default function OrderHistoryScreen() {
                     <StatusIcon color={status.color} size={14} />
                     <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: status.color, marginLeft: 6 }}>
                       {status.text}
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <ShieldCheck size={12} color="#10B981" />
+                    <Text style={{ fontFamily: 'Inter-Regular', fontSize: 10, color: textSecondary }}>
+                      Depósito directo al local
                     </Text>
                   </View>
                 </View>

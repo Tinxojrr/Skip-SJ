@@ -34,9 +34,10 @@ export default function NotificationsScreen() {
   useEffect(() => {
     fetchNotifications();
 
-    // Suscripción en Tiempo Real para recibir notificaciones al instante
+    // Suscripción en Tiempo Real para recibir notificaciones al instante con canal único
+    const channelName = `notificaciones-live-${session?.user?.id || 'anon'}-${Date.now()}`;
     const channel = supabase
-      .channel('notificaciones-live')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

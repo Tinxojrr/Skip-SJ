@@ -244,8 +244,10 @@ export const KanbanBoard = () => {
             tipo,
             enviado: true,
           })
-          .then(() => {})
-          .catch((e) => console.warn('Aviso inserción notificación:', e));
+          .then(
+            () => {},
+            (e: any) => console.warn('Aviso inserción notificación:', e)
+          );
       }
 
       setPedidos(prev => prev.map(p => p.id === id ? { ...p, estado: nuevoEstado } : p));

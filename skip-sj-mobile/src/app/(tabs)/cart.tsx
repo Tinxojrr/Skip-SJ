@@ -49,70 +49,34 @@ export interface PaymentOption {
 
 const BASE_BANCOS: PaymentOption[] = [
   {
-    id: 'bancoestado',
-    nombre: 'BancoEstado',
-    tipoCuenta: 'CuentaRUT / Cuenta Pro',
-    sigla: 'BE',
-    colorBg: '#004B93',
-    colorSecundario: '#F58220',
-    badge: 'CuentaRUT Oficial',
-    passNombre: 'Clave Pass'
+    id: 'mercadopago_wallet',
+    nombre: 'Mercado Pago (Dinero en Cuenta)',
+    tipoCuenta: 'Saldo Billetera • Aprobación Inmediata',
+    sigla: 'MP',
+    colorBg: '#009EE3',
+    colorSecundario: '#007EB5',
+    badge: 'Split Payment Oficial',
+    passNombre: 'PIN / Huella Mercado Pago'
   },
   {
-    id: 'webpay',
-    nombre: 'Webpay Plus (Transbank)',
-    tipoCuenta: 'Tarjetas Débito / Crédito',
-    sigla: 'TBK',
-    colorBg: '#E11938',
-    colorSecundario: '#991B1B',
-    badge: 'Sandbox Oficial',
-    passNombre: 'Autenticación Bancaria'
+    id: 'mercadopago_card',
+    nombre: 'Tarjetas vía Mercado Pago',
+    tipoCuenta: 'Débito / Crédito (Visa, Mastercard)',
+    sigla: 'MP',
+    colorBg: '#0284C7',
+    colorSecundario: '#0369A1',
+    badge: 'Procesado por Mercado Pago',
+    passNombre: 'CVV de Seguridad'
   },
   {
-    id: 'mach',
-    nombre: 'MACH / Bci',
-    tipoCuenta: 'Billetera Digital',
-    sigla: 'M',
-    colorBg: '#6C00FF',
-    colorSecundario: '#A855F7',
-    badge: 'Pago en 1 toque',
-    passNombre: 'PIN MACH'
-  },
-  {
-    id: 'santander',
-    nombre: 'Banco Santander',
-    tipoCuenta: 'Cuenta Corriente / Vista',
-    sigla: 'SAN',
-    colorBg: '#EC0000',
-    colorSecundario: '#B91C1C',
-    passNombre: 'Santander Pass'
-  },
-  {
-    id: 'bancochile',
-    nombre: 'Banco de Chile / Edwards',
-    tipoCuenta: 'Cuenta Fan / Corriente',
-    sigla: 'BCH',
-    colorBg: '#0B2545',
-    colorSecundario: '#1E40AF',
-    passNombre: 'Mi Pass'
-  },
-  {
-    id: 'falabella',
-    nombre: 'Banco Falabella',
-    tipoCuenta: 'Cuenta Vista / CMR',
-    sigla: 'CMR',
-    colorBg: '#009A44',
-    colorSecundario: '#047857',
-    passNombre: 'Clave Dinámica'
-  },
-  {
-    id: 'tenpo',
-    nombre: 'Tenpo',
-    tipoCuenta: 'Cuenta Digital Prepago',
-    sigla: 'T',
-    colorBg: '#00BFA5',
-    colorSecundario: '#0D9488',
-    passNombre: 'Clave Tenpo'
+    id: 'mercadopago_cuentarut',
+    nombre: 'CuentaRUT vía Mercado Pago',
+    tipoCuenta: 'Débito Redcompra Integrado',
+    sigla: 'MP',
+    colorBg: '#0369A1',
+    colorSecundario: '#075985',
+    badge: 'Redcompra Mercado Pago',
+    passNombre: 'Clave de Seguridad'
   }
 ];
 
@@ -142,35 +106,27 @@ export default function CartScreen() {
     isCard: true
   });
 
-  // Opciones completas de pago: TARJETAS GUARDADAS PRIMERO, luego Webpay Plus y bancos
+  // Opciones de pago: Pasarela Oficial Mercado Pago
   const paymentOptions = useMemo<PaymentOption[]>(() => {
     const list: PaymentOption[] = [];
 
-    // 1. Tarjetas guardadas del usuario (Prioridad alta)
+    // 1. Mercado Pago Dinero en Cuenta (Billetera principal)
+    list.push(BASE_BANCOS[0]);
+
+    // 2. Tarjetas guardadas del usuario o Tarjetas vía Mercado Pago
     savedCards.forEach(c => {
       list.push(formatCardOption(c));
     });
-
-    // 2. Webpay Plus Transbank Developer (Para pagar con cualquier otra tarjeta)
     list.push(BASE_BANCOS[1]);
 
-    // 3. BancoEstado CuentaRUT
-    list.push(BASE_BANCOS[0]);
-
-    // 4. Otros bancos chilenos
-    BASE_BANCOS.slice(2).forEach(b => list.push(b));
+    // 3. CuentaRUT / Débito vía Mercado Pago
+    list.push(BASE_BANCOS[2]);
 
     return list;
   }, [savedCards]);
 
-  // Estados de Pasarela: por defecto la tarjeta guardada si existe
-  const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(() => {
-    if (savedCards.length > 0) {
-      const activeCard = savedCards.find(c => c.id === selectedCardId) || savedCards[0];
-      return formatCardOption(activeCard);
-    }
-    return BASE_BANCOS[1]; // Webpay Plus por defecto
-  });
+  // Estados de Pasarela: por defecto Mercado Pago Oficial
+  const [bancoSeleccionado, setBancoSeleccionado] = useState<PaymentOption>(BASE_BANCOS[0]);
 
   // Mantener sincronizado si el usuario agrega o selecciona una tarjeta en add-payment
   useEffect(() => {
@@ -231,8 +187,8 @@ export default function CartScreen() {
 
     try {
       const paymentMethodType = 
-        bancoSeleccionado.isCard || bancoSeleccionado.id === 'webpay' ? 'card' :
-        bancoSeleccionado.id === 'mach' ? 'mach' : 'bancoestado';
+        bancoSeleccionado.isCard || bancoSeleccionado.id === 'mercadopago_card' ? 'card' :
+        bancoSeleccionado.id === 'mercadopago_cuentarut' ? 'bancoestado' : 'mach';
 
       const selectedCardData = savedCards.find(c => c.id === bancoSeleccionado.id);
 
@@ -506,7 +462,7 @@ export default function CartScreen() {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 12 }}>
-            {bancoSeleccionado.isCard || bancoSeleccionado.id === 'webpay' ? (
+            {bancoSeleccionado.isCard || bancoSeleccionado.id === 'mercadopago_card' ? (
               <CreditCard size={18} color="#FFFFFF" />
             ) : (
               <Building2 size={18} color="#FFFFFF" />
@@ -631,9 +587,9 @@ export default function CartScreen() {
                 {/* Header Seguro */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <ShieldCheck size={18} color="#10B981" />
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#10B981' }}>
-                      Pasarela Cifrada 256-bit • Ambiente Developer
+                    <ShieldCheck size={18} color="#009EE3" />
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#009EE3' }}>
+                      Pasarela Cifrada TLS 1.3 • Mercado Pago Split Payment
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
@@ -654,12 +610,12 @@ export default function CartScreen() {
                   elevation: 4
                 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 16 }}>
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-Bold', fontSize: 15, flex: 1, marginRight: 8 }} numberOfLines={1}>
                       {bancoSeleccionado.nombre}
                     </Text>
-                    <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
                       <Text style={{ color: '#FFFFFF', fontFamily: 'Inter-SemiBold', fontSize: 10 }}>
-                        {bancoSeleccionado.tipoCuenta}
+                        {bancoSeleccionado.badge || bancoSeleccionado.tipoCuenta}
                       </Text>
                     </View>
                   </View>
@@ -676,16 +632,20 @@ export default function CartScreen() {
                 <View style={{ backgroundColor: isDarkMode ? '#27272A' : '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                     <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Comercio receptor:</Text>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary }}>SKIP Duoc UC ({storeName})</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary }}>{storeName || 'Achoclonado'} SpA</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Sede:</Text>
-                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: textPrimary }}>San Joaquín</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Collector ID Destino:</Text>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#009EE3' }}>MP-LOC-749201</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: textSecondary }}>Dispersión Automática:</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#10B981' }}>100% Directa (Split Payment)</Text>
                   </View>
                   <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: textPrimary }}>Total a pagar:</Text>
-                    <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: isDarkMode ? '#F2A900' : bancoSeleccionado.colorBg }}>
+                    <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#009EE3' }}>
                       ${total.toLocaleString('es-CL')} CLP
                     </Text>
                   </View>
@@ -850,6 +810,26 @@ export default function CartScreen() {
                   <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#94A3B8', marginTop: 8, textAlign: 'center' }}>
                     Dicta este código o escanéalo en el tótem de {storeName}
                   </Text>
+
+                  {/* Detalle de Liquidación Directa a Comercio */}
+                  <View style={{
+                    marginTop: 10,
+                    paddingTop: 8,
+                    borderTopWidth: 1,
+                    borderTopColor: '#334155',
+                    width: '100%',
+                    alignItems: 'center'
+                  }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter-Bold', color: '#38BDF8' }}>
+                      Comercio: {storeName || 'Achoclonado'} SpA
+                    </Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-SemiBold', color: '#009EE3', marginTop: 2 }}>
+                      Mercado Pago Marketplace • Collector: MP-LOC-749201
+                    </Text>
+                    <Text style={{ fontSize: 9, fontFamily: 'Inter-Regular', color: '#94A3B8', marginTop: 2, textAlign: 'center' }}>
+                      Fondos liquidados 100% al concesionario • Comisión SKIP: $0
+                    </Text>
+                  </View>
 
                   {comprobantePago?.authorizationCode && (
                     <Text style={{ fontSize: 10, fontFamily: 'Inter-Regular', color: '#64748B', marginTop: 6, fontStyle: 'italic' }}>

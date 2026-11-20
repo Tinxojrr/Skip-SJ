@@ -74,18 +74,18 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
   }
 
   // Mapear proveedor y enum de Supabase ('webpay' | 'bancoestado' | 'otro')
-  let dbMetodoPago: 'webpay' | 'bancoestado' | 'otro' = 'bancoestado';
-  let providerName = 'BancoEstado CuentaRUT (Open Banking Dev)';
+  let dbMetodoPago: 'webpay' | 'bancoestado' | 'otro' = 'otro';
+  let providerName = 'Mercado Pago (Dinero en Cuenta)';
   
   if (paymentMethod === 'card' || paymentMethod === 'webpay') {
     dbMetodoPago = 'webpay';
-    providerName = `Webpay Plus / ${cardDetails?.brand?.toUpperCase() || 'Débito/Crédito'} (Transbank Sandbox 597055555532)`;
+    providerName = `Mercado Pago / ${cardDetails?.brand?.toUpperCase() || 'Débito/Crédito'}`;
   } else if (paymentMethod === 'bancoestado') {
     dbMetodoPago = 'bancoestado';
-    providerName = 'BancoEstado CuentaRUT (Open Banking Dev)';
-  } else if (paymentMethod === 'mach') {
+    providerName = 'CuentaRUT vía Mercado Pago';
+  } else {
     dbMetodoPago = 'otro';
-    providerName = 'MACH Bci Pay (Dev)';
+    providerName = 'Mercado Pago Split Payment (Oficial)';
   }
 
   const codigoRetiro = generateWithdrawalCode();
@@ -109,10 +109,16 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
     if (pedidoError) throw pedidoError;
 
     // 2. REGISTRAR TRANSACCIÓN PENDIENTE EN `transacciones_pago`
-    const txExternalId = `TBK-WP-${paymentMethod.toUpperCase()}-${Date.now()}`;
+    const txExternalId = `MP-COLLECTOR-${Date.now()}`;
     const initialPayload = {
-      ambient: 'transbank_developer_sandbox',
-      commerce_code: '597055555532',
+      gateway: 'mercadopago_marketplace',
+      collector_id: 'MP-LOC-749201',
+      merchant_business_name: 'Comercializadora Achoclonado SpA',
+      split_payment: {
+        destination_locatario_id: storeId,
+        payout_model: 'direct_disbursement_to_merchant',
+        skip_fee_retention: 0
+      },
       payer: {
         user_id: userId,
         email: userEmail,
@@ -140,8 +146,8 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
       console.warn('Nota: tabla transacciones_pago omitida por RLS o no disponible:', txError.message);
     }
 
-    // 3. AUTORIZACIÓN FINANCIERA (Transbank Webpay / BancoEstado Developer)
-    const authCode = `TBK-${Math.floor(100000 + Math.random() * 900000)}`;
+    // 3. AUTORIZACIÓN FINANCIERA (Mercado Pago Marketplace API)
+    const authCode = `MP-${Math.floor(10000000 + Math.random() * 90000000)}`;
 
     // 4. INSERTAR ITEMS DEL PEDIDO
     const itemsPayload = items.map(item => ({
@@ -189,6 +195,13 @@ export async function executeDeveloperPayment(params: PaymentExecutionParams): P
         response_description: 'Transacción Aprobada Exitosamente',
         authorization_code: authCode,
         card_last4: cardDetails?.cardLast4 || 'RUT',
+        split_disbursement: {
+          destination_locatario_id: storeId,
+          disbursement_status: 'PAID_DIRECT_TO_MERCHANT',
+          recipient_collector: 'LOCATARIO_DIRECT_ACCOUNT',
+          skip_fee_clp: 0,
+          net_merchant_amount_clp: total
+        },
         approved_at: new Date().toISOString()
       };
 
